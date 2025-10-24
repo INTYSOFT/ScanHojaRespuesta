@@ -37,8 +37,11 @@ namespace ContrlAcademico
         private bool _calibrated = false;
         private readonly string _configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.json");
 
-        public Form1()
+        private readonly string? _authToken;
+
+        public Form1(string? authToken = null)
         {
+            _authToken = authToken;
             InitializeComponent();
             // suscribirte al evento MouseClick
             pbWarped.MouseClick += PbWarped_MouseClick;

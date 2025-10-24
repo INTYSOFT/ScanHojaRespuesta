@@ -19,6 +19,6 @@
     "blockSpacing": 100
   },
 
-  "apiEndpoint": "https:omr"
+  "apiEndpoint": "https://localhost:5001/"
 }
 
