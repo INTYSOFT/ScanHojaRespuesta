@@ -41,6 +41,8 @@
             tbPage = new TextBox();
             dgvHead = new DataGridView();
             dgvDetalle = new DataGridView();
+            cmbEvaluaciones = new ComboBox();
+            lblEvaluacion = new Label();
             ((System.ComponentModel.ISupportInitialize)pbWarped).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pbThresh).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pbDni).BeginInit();
@@ -80,7 +82,7 @@
             // 
             // progressBar
             // 
-            progressBar.Location = new Point(35, 417);
+            progressBar.Location = new Point(35, 479);
             progressBar.Margin = new Padding(7);
             progressBar.Name = "progressBar";
             progressBar.Size = new Size(1343, 78);
@@ -109,7 +111,7 @@
             // 
             // btnPrev
             // 
-            btnPrev.Location = new Point(24, 294);
+            btnPrev.Location = new Point(24, 356);
             btnPrev.Margin = new Padding(7);
             btnPrev.Name = "btnPrev";
             btnPrev.Size = new Size(184, 78);
@@ -120,7 +122,7 @@
             // 
             // btnNext
             // 
-            btnNext.Location = new Point(412, 301);
+            btnNext.Location = new Point(412, 363);
             btnNext.Margin = new Padding(7);
             btnNext.Name = "btnNext";
             btnNext.Size = new Size(205, 78);
@@ -132,7 +134,7 @@
             // lblPageInfo
             // 
             lblPageInfo.AutoSize = true;
-            lblPageInfo.Location = new Point(35, 218);
+            lblPageInfo.Location = new Point(35, 280);
             lblPageInfo.Margin = new Padding(7, 0, 7, 0);
             lblPageInfo.Name = "lblPageInfo";
             lblPageInfo.Size = new Size(136, 57);
@@ -151,7 +153,7 @@
             // 
             // tbPage
             // 
-            tbPage.Location = new Point(221, 301);
+            tbPage.Location = new Point(221, 363);
             tbPage.Margin = new Padding(7);
             tbPage.Name = "tbPage";
             tbPage.Size = new Size(172, 63);
@@ -161,7 +163,7 @@
             // dgvHead
             // 
             dgvHead.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvHead.Location = new Point(24, 508);
+            dgvHead.Location = new Point(24, 570);
             dgvHead.Margin = new Padding(7);
             dgvHead.MultiSelect = false;
             dgvHead.Name = "dgvHead";
@@ -171,20 +173,43 @@
             dgvHead.CellContentClick += dgvHead_CellContentClick;
             // 
             // dgvDetalle
-            // 
+            //
             dgvDetalle.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvDetalle.Location = new Point(24, 1119);
+            dgvDetalle.Location = new Point(24, 1181);
             dgvDetalle.Margin = new Padding(7);
             dgvDetalle.Name = "dgvDetalle";
             dgvDetalle.RowHeadersWidth = 62;
             dgvDetalle.Size = new Size(1392, 734);
             dgvDetalle.TabIndex = 18;
-            // 
+            //
+            // cmbEvaluaciones
+            //
+            cmbEvaluaciones.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbEvaluaciones.FormattingEnabled = true;
+            cmbEvaluaciones.Location = new Point(35, 240);
+            cmbEvaluaciones.Margin = new Padding(7);
+            cmbEvaluaciones.Name = "cmbEvaluaciones";
+            cmbEvaluaciones.Size = new Size(619, 65);
+            cmbEvaluaciones.TabIndex = 19;
+            cmbEvaluaciones.SelectedIndexChanged += cmbEvaluaciones_SelectedIndexChanged;
+            //
+            // lblEvaluacion
+            //
+            lblEvaluacion.AutoSize = true;
+            lblEvaluacion.Location = new Point(35, 186);
+            lblEvaluacion.Margin = new Padding(7, 0, 7, 0);
+            lblEvaluacion.Name = "lblEvaluacion";
+            lblEvaluacion.Size = new Size(395, 57);
+            lblEvaluacion.TabIndex = 20;
+            lblEvaluacion.Text = "Evaluación programada";
+            //
             // Form1
-            // 
+            //
             AutoScaleDimensions = new SizeF(23F, 57F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(3275, 1847);
+            Controls.Add(lblEvaluacion);
+            Controls.Add(cmbEvaluaciones);
             Controls.Add(dgvDetalle);
             Controls.Add(dgvHead);
             Controls.Add(tbPage);
@@ -226,5 +251,7 @@
         private TextBox tbPage;
         private DataGridView dgvHead;
         private DataGridView dgvDetalle;
+        private ComboBox cmbEvaluaciones;
+        private Label lblEvaluacion;
     }
 }

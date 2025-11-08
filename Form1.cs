@@ -2,8 +2,7 @@
 using Newtonsoft.Json;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
-using System.Text;
-using System.Threading;
+using System.Net.Http;
 
 namespace ContrlAcademico
 {
@@ -38,6 +37,11 @@ namespace ContrlAcademico
         private readonly string _configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.json");
 
         private readonly string? _authToken;
+        private readonly EvaluacionProgramadaService _evaluacionService = new();
+        private List<EvaluacionProgramadaSummaryDto> _evaluacionesProgramadas = new();
+        private List<EvaluacionProgramadaConsultaDto> _evaluacionParticipantes = new();
+        private readonly Dictionary<string, int> _dniToScanIndex = new(StringComparer.OrdinalIgnoreCase);
+        private bool _suppressPageTextChange;
 
         public Form1(string? authToken = null)
         {
@@ -90,17 +94,18 @@ namespace ContrlAcademico
             dgvHead.ClearSelection();
             dgvHead.Rows[e.RowIndex].Selected = true;
 
-            // 2) Navegamos la visualización a esa página
-            DisplayPage(e.RowIndex);
-
-            // 3) Refrescamos el detalle
-            FillDetail(e.RowIndex);
+            MostrarDetalleDesdeFila(e.RowIndex);
         }
 
-        private void FillDetail(int pageIndex)
+        private void FillDetailFromScanIndex(int scanIndex)
         {
             dgvDetalle.Rows.Clear();
-            var answers = _pageAnswers[pageIndex];
+            if (scanIndex < 0 || scanIndex >= _pageAnswers.Count)
+            {
+                return;
+            }
+
+            var answers = _pageAnswers[scanIndex];
             for (int q = 0; q < answers.Length; q++)
             {
                 dgvDetalle.Rows.Add((q + 1).ToString(), answers[q].ToString());
@@ -153,9 +158,268 @@ namespace ContrlAcademico
             //logs.AppendText($"Calibrado: StartY={g.StartY}, Dy={g.Dy}\n");
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private async void Form1_Load(object sender, EventArgs e)
         {
+            await LoadEvaluacionesProgramadasAsync();
+        }
 
+        private async Task LoadEvaluacionesProgramadasAsync()
+        {
+            try
+            {
+                cmbEvaluaciones.Enabled = false;
+
+                if (string.IsNullOrWhiteSpace(_authToken))
+                {
+                    MessageBox.Show(
+                        "No se encontró el token de autenticación. Inicie sesión nuevamente.",
+                        "Autenticación requerida",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                var evaluaciones = await _evaluacionService
+                    .ObtenerPorEstadoAsync(_config.ApiEndpoint, 2, _authToken)
+                    .ConfigureAwait(true);
+
+                _evaluacionesProgramadas = evaluaciones.ToList();
+
+                if (_evaluacionesProgramadas.Count == 0)
+                {
+                    cmbEvaluaciones.DataSource = null;
+                    lblEvaluacion.Text = "No existen evaluaciones programadas";
+                    return;
+                }
+
+                cmbEvaluaciones.DataSource = _evaluacionesProgramadas;
+                cmbEvaluaciones.DisplayMember = nameof(EvaluacionProgramadaSummaryDto.DisplayText);
+                cmbEvaluaciones.ValueMember = nameof(EvaluacionProgramadaSummaryDto.Id);
+                cmbEvaluaciones.Enabled = true;
+                lblEvaluacion.Text = "Evaluación programada";
+            }
+            catch (HttpRequestException ex)
+            {
+                MessageBox.Show(
+                    $"Error de conexión al cargar las evaluaciones programadas: {ex.Message}",
+                    "Error de red",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Error al cargar las evaluaciones programadas: {ex.Message}",
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        private async Task LoadEvaluacionDetalleAsync(int evaluacionProgramadaId)
+        {
+            try
+            {
+                var detalle = await _evaluacionService
+                    .ObtenerDetalleAsync(_config.ApiEndpoint, evaluacionProgramadaId, _authToken ?? string.Empty)
+                    .ConfigureAwait(true);
+
+                _evaluacionParticipantes = detalle.ToList();
+                PopulateHeadGrid(_evaluacionParticipantes);
+                ClearScanResults();
+            }
+            catch (HttpRequestException ex)
+            {
+                MessageBox.Show(
+                    $"Error de conexión al consultar la evaluación seleccionada: {ex.Message}",
+                    "Error de red",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Error al consultar la evaluación seleccionada: {ex.Message}",
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        private void PopulateHeadGrid(IEnumerable<EvaluacionProgramadaConsultaDto> participantes)
+        {
+            dgvHead.Rows.Clear();
+
+            foreach (var participante in participantes)
+            {
+                var nombreCompleto = string.Join(" ", new[]
+                {
+                    participante.AlumnoApellidos?.Trim() ?? string.Empty,
+                    participante.AlumnoNombres?.Trim() ?? string.Empty
+                }).Trim();
+
+                int index = dgvHead.Rows.Add(
+                    string.Empty,
+                    participante.AlumnoDni ?? string.Empty,
+                    nombreCompleto,
+                    string.Empty,
+                    participante.Ciclo ?? string.Empty,
+                    participante.Seccion ?? string.Empty);
+
+                dgvHead.Rows[index].Tag = null;
+            }
+
+            dgvHead.ClearSelection();
+        }
+
+        private void ClearScanResults()
+        {
+            _pageDnis = new List<string>();
+            _pageAnswers = new List<char[]>();
+            _debugPages = new List<Bitmap>();
+            _threshPages = new List<Bitmap>();
+            _answersPages = new List<char[]>();
+            _dniToScanIndex.Clear();
+            _currentPage = 0;
+
+            dgvDetalle.Rows.Clear();
+            lblPageInfo.Text = string.Empty;
+            pbWarped.Image?.Dispose();
+            pbWarped.Image = null;
+            pbThresh.Image?.Dispose();
+            pbThresh.Image = null;
+            btnPrev.Enabled = false;
+            btnNext.Enabled = false;
+            progressBar.Value = 0;
+            progressBar.Maximum = 0;
+
+            foreach (DataGridViewRow row in dgvHead.Rows)
+            {
+                row.Cells["colPage"].Value = string.Empty;
+                row.Cells["colFecha"].Value = string.Empty;
+                row.Tag = null;
+            }
+        }
+
+        private int FindRowIndexByDni(string dni)
+        {
+            if (string.IsNullOrWhiteSpace(dni))
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < dgvHead.Rows.Count; i++)
+            {
+                if (dgvHead.Rows[i].Cells["colDNI"].Value is string cellValue &&
+                    string.Equals(cellValue.Trim(), dni.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private async void cmbEvaluaciones_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (cmbEvaluaciones.SelectedItem is not EvaluacionProgramadaSummaryDto evaluacion)
+            {
+                return;
+            }
+
+            await LoadEvaluacionDetalleAsync(evaluacion.Id);
+        }
+
+        private void UpdateRowWithScanData(string dni, int scanIndex, DateTime fechaProcesamiento)
+        {
+            dni ??= string.Empty;
+            dni = dni.Trim();
+
+            int rowIndex = FindRowIndexByDni(dni);
+
+            if (rowIndex >= 0)
+            {
+                var row = dgvHead.Rows[rowIndex];
+                row.Cells["colPage"].Value = (scanIndex + 1).ToString("000");
+                row.Cells["colFecha"].Value = fechaProcesamiento.ToShortDateString();
+                row.Cells["colDNI"].Value = dni;
+                row.Tag = scanIndex;
+            }
+            else
+            {
+                rowIndex = dgvHead.Rows.Add(
+                    (scanIndex + 1).ToString("000"),
+                    dni,
+                    string.Empty,
+                    fechaProcesamiento.ToShortDateString(),
+                    string.Empty,
+                    string.Empty);
+
+                dgvHead.Rows[rowIndex].Tag = scanIndex;
+            }
+
+            if (!string.IsNullOrWhiteSpace(dni))
+            {
+                _dniToScanIndex[dni] = scanIndex;
+            }
+        }
+
+        private void SelectRowByDni(string dni)
+        {
+            int rowIndex = FindRowIndexByDni(dni);
+            if (rowIndex < 0)
+            {
+                return;
+            }
+
+            dgvHead.ClearSelection();
+            dgvHead.Rows[rowIndex].Selected = true;
+            dgvHead.FirstDisplayedScrollingRowIndex = Math.Max(0, rowIndex);
+        }
+
+        private void ShowScanResult(int scanIndex)
+        {
+            if (scanIndex < 0 || scanIndex >= _pageAnswers.Count)
+            {
+                return;
+            }
+
+            FillDetailFromScanIndex(scanIndex);
+            DisplayPage(scanIndex);
+            _currentPage = scanIndex;
+
+            btnPrev.Enabled = _currentPage > 0;
+            btnNext.Enabled = _currentPage < _pageAnswers.Count - 1;
+        }
+
+        private void MostrarDetalleDesdeFila(int rowIndex)
+        {
+            if (rowIndex < 0 || rowIndex >= dgvHead.Rows.Count)
+            {
+                return;
+            }
+
+            var row = dgvHead.Rows[rowIndex];
+
+            int scanIndex = -1;
+            if (row.Tag is int tagIndex)
+            {
+                scanIndex = tagIndex;
+            }
+            else if (row.Cells["colDNI"].Value is string dni && _dniToScanIndex.TryGetValue(dni, out var mappedIndex))
+            {
+                scanIndex = mappedIndex;
+            }
+
+            if (scanIndex >= 0)
+            {
+                ShowScanResult(scanIndex);
+            }
+            else
+            {
+                dgvDetalle.Rows.Clear();
+                lblPageInfo.Text = "Sin resultados de escaneo";
+            }
         }
         //evento resize de form1
 
@@ -249,19 +513,28 @@ namespace ContrlAcademico
 
         private async void btnStart_Click(object sender, EventArgs e)
         {
-            // 1.a) Validar PDF
-            dgvHead.Rows.Clear();
-            dgvDetalle.Rows.Clear();
-            _pageDnis    = new List<string>();
-            _pageAnswers = new List<char[]>();
+            if (cmbEvaluaciones.SelectedItem is not EvaluacionProgramadaSummaryDto)
+            {
+                MessageBox.Show(
+                    "Seleccione una evaluación programada antes de iniciar el escaneo.",
+                    "Evaluación requerida",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
 
+            if (string.IsNullOrWhiteSpace(txtPdfPath.Text) || !File.Exists(txtPdfPath.Text))
+            {
+                MessageBox.Show(
+                    "Seleccione un archivo PDF válido antes de iniciar.",
+                    "Archivo requerido",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            ClearScanResults();
             btnStart.Enabled = false;
-            //logs.Clear();
-
-            _debugPages   = new List<Bitmap>();
-            _threshPages  = new List<Bitmap>();
-            _answersPages = new List<char[]>();
-
 
             try
             {
@@ -269,25 +542,29 @@ namespace ContrlAcademico
                 var renderer = new PdfRenderer(@"C:\Program Files\gs\gs10.05.1\bin\gsdll64.dll", _config.Dpi);
 
                 var pages = renderer.RenderPages(txtPdfPath.Text);
+                if (pages.Count == 0)
+                {
+                    MessageBox.Show(
+                        "El documento seleccionado no contiene páginas.",
+                        "Documento vacío",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                    return;
+                }
+
+                progressBar.Value = 0;
                 progressBar.Maximum = pages.Count;
 
-                _pageDnis     = new List<string>(pages.Count);
-                _pageAnswers  = new List<char[]>(pages.Count);
+                _pageDnis = new List<string>(pages.Count);
+                _pageAnswers = new List<char[]>(pages.Count);
 
                 for (int i = 0; i < pages.Count; i++)
                 {
+                    string dni = ReadDniFromPage(pages[i]);
 
-                    string dni = string.Empty;
-
-                    dni=ReadDniFromPage(pages[i]);
-
-                    //Corrijo perspectiva
                     Bitmap warped = corrector.Correct(pages[i], out _, out _);
 
-                    //Muestro debug de todo el warped
                     using var warpedMat = BitmapConverter.ToMat(warped);
-
-                    //logs.AppendText($"DEBUG: warped size = {warpedMat.Width}×{warpedMat.Height}\n");
 
                     Mat debugMat = warpedMat.Clone();
                     pbWarped.Image?.Dispose();
@@ -295,104 +572,44 @@ namespace ContrlAcademico
                     Application.DoEvents();
                     await Task.Delay(200);
 
-                    // 3) DEBUG: dibujar rectángulos normalizados
-                    /*var g = _config.AnswersGrid;
-                    for (int b = 0; b < g.BlockCount; b++)
-                    {
-                        // desplazamiento X del bloque b
-                        int blockX = g.StartX + b * (g.Cols * g.Dx + g.BlockSpacing);
-
-                        for (int row = 0; row < g.Rows; row++)
-                        {
-                            int y = g.StartY + row * g.Dy;
-                            for (int col = 0; col < g.Cols; col++)
-                            {
-                                int x = blockX + col * g.Dx;
-                                Cv2.Rectangle(
-                                    debugMat,
-                                    new Rect(x, y, g.BubbleW, g.BubbleH),
-                                    Scalar.Red,
-                                    1
-                                );
-                            }
-                        }
-                    }*/
-
-                    //Mostrar binarizado
-                    Mat gray = new Mat();
+                    using Mat gray = new Mat();
                     Cv2.CvtColor(warpedMat, gray, ColorConversionCodes.BGR2GRAY);
                     Cv2.GaussianBlur(gray, gray, new OpenCvSharp.Size(5, 5), 0);
 
-                    if (!_calibrated) CalibrateGrid(gray);
-
-                    /*Mat thresh = new Mat();
-                    Cv2.AdaptiveThreshold(
-                        gray,
-                        thresh,
-                        255,
-                        AdaptiveThresholdTypes.GaussianC,
-                        ThresholdTypes.BinaryInv,
-                        11,
-                        1            // puedes también experimentar con este valor
-                    );
-
-                    pbThresh.Image?.Dispose();
-                    pbThresh.Image = BitmapConverter.ToBitmap(thresh);*/
-
-
-                    //DNI
-                    //Bitmap fullPageBmp = pages[i];
-                    //string dni = ReadDni(fullPageBmp);
-                    //logs.AppendText($"Página {i+1}: DNI → {dni}\n");
-
+                    if (!_calibrated)
+                    {
+                        CalibrateGrid(gray);
+                    }
 
                     var answers = _omrProcessor.Process(warped);
+                    warped.Dispose();
 
                     _pageDnis.Add(dni);
                     _pageAnswers.Add(answers);
 
-                    //dgvHead
-                    dgvHead.Rows.Add(
-                        (i + 1).ToString("000"), // Página 001,002...
-                        dni,                     // El DNI leído
-                        "",                      // Nombre (aún no lo tenemos)
-                        DateTime.Now.ToShortDateString(), // Fecha actual
-                        "",                      // Grado (aún no lo tenemos)
-                        ""                       // Sección (aún no lo tenemos)
-                    );
-
-                    //agregar logs.AppendText pregunta y respuesta
-                    //for (int j = 0; j < answers.Length; j++)
-                    //{
-                    //log.AppendText($"Página {i+1} DNI {dni} : Pregunta {j + 1}: Respuesta {answers[j]}\n");
-
-                    //}
+                    UpdateRowWithScanData(dni, i, DateTime.Now);
 
                     progressBar.Value = i + 1;
                     Application.DoEvents();
                     await Task.Delay(50);
-
                 }
 
-                // Al terminar todo:
-                _currentPage = 0;
-                DisplayPage(_currentPage);
-                btnPrev.Enabled = false;
-                btnNext.Enabled = pages.Count > 1;
-
+                if (_pageDnis.Count > 0)
+                {
+                    ShowScanResult(0);
+                    SelectRowByDni(_pageDnis[0]);
+                }
             }
             catch (Exception ex)
             {
-                //logs.AppendText($"ERROR: {ex.Message}\n");
+                MessageBox.Show(
+                    $"Error al procesar el documento: {ex.Message}",
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
             finally
             {
-                if (dgvHead.Rows.Count > 0)
-                {
-                    dgvHead.ClearSelection();
-                    dgvHead.Rows[0].Selected = true;
-                }
-
                 btnStart.Enabled = true;
             }
         }
@@ -402,32 +619,18 @@ namespace ContrlAcademico
         {
             if (dgvHead.SelectedRows.Count == 0) return;
             int idx = dgvHead.SelectedRows[0].Index;
-
-            // ▷ Guard clause: si el índice no existe, salimos sin tocar nada
-            if (_pageAnswers == null|| idx < 0|| idx >= _pageAnswers.Count)
-                return;
-
-
-            //DisplayPage(idx);
-            FillDetail(idx);
-
-            // Refrescar pagina visual
-            _currentPage = idx;
-
-            // Rellenar detalle
-            dgvDetalle.Rows.Clear();
-            var answers = _pageAnswers[idx];
-            for (int q = 0; q < answers.Length; q++)
-            {
-                dgvDetalle.Rows.Add((q+1).ToString(), answers[q].ToString());
-            }
-
-            DisplayPage(idx);
+            MostrarDetalleDesdeFila(idx);
         }
 
 
         private void DisplayPage(int index)
         {
+            if (_debugPages == null || _threshPages == null)
+                return;
+
+            if (index < 0 || index >= _debugPages.Count || index >= _threshPages.Count)
+                return;
+
             // debug (warped con rects)
             pbWarped.Image?.Dispose();
             // Clonamos para no disolver el original de la lista
@@ -441,7 +644,9 @@ namespace ContrlAcademico
             lblPageInfo.Text = $"{index+1} / {_debugPages.Count}";
 
             // Actualizar el texto del textbox de página
+            _suppressPageTextChange = true;
             tbPage.Text = (index + 1).ToString(); // Convertir a 1-based
+            _suppressPageTextChange = false;
 
 
             // Logs: limpia y muestra solo esa página
@@ -452,41 +657,37 @@ namespace ContrlAcademico
 
         private void btnPrev_Click(object sender, EventArgs e)
         {
-            if (_currentPage > 0)
+            if (_pageAnswers.Count == 0 || _currentPage <= 0)
             {
-                _currentPage--;
-                DisplayPage(_currentPage);
-                btnNext.Enabled = true;
-                btnPrev.Enabled = _currentPage > 0;
-                //Actulizar tbPage
-                tbPage.Text = (_currentPage + 1).ToString(); // Convertir a 1-based
+                return;
+            }
 
+            _currentPage--;
+            ShowScanResult(_currentPage);
 
+            tbPage.Text = (_currentPage + 1).ToString();
 
-                dgvHead.ClearSelection();
-                dgvHead.Rows[_currentPage].Selected = true;
-                dgvHead.FirstDisplayedScrollingRowIndex = _currentPage; // Desplazar al inicio de la página actual
-
+            if (_currentPage >= 0 && _currentPage < _pageDnis.Count)
+            {
+                SelectRowByDni(_pageDnis[_currentPage]);
             }
         }
 
         private void btnNext_Click(object sender, EventArgs e)
         {
-            if (_currentPage < _debugPages.Count - 1)
+            if (_pageAnswers.Count == 0 || _currentPage >= _pageAnswers.Count - 1)
             {
-                _currentPage++;
-                DisplayPage(_currentPage);
-                btnPrev.Enabled = true;
-                btnNext.Enabled = _currentPage < _debugPages.Count - 1;
-                //Actualizar tbPage
-                tbPage.Text = (_currentPage + 1).ToString(); // Convertir a 1-based
+                return;
+            }
 
-                dgvHead.ClearSelection();
-                dgvHead.Rows[_currentPage].Selected = true;
-                dgvHead.FirstDisplayedScrollingRowIndex = _currentPage; // Desplazar al inicio de la página actual
+            _currentPage++;
+            ShowScanResult(_currentPage);
 
+            tbPage.Text = (_currentPage + 1).ToString();
 
-
+            if (_currentPage >= 0 && _currentPage < _pageDnis.Count)
+            {
+                SelectRowByDni(_pageDnis[_currentPage]);
             }
         }
 
@@ -578,26 +779,28 @@ namespace ContrlAcademico
 
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
+            if (_suppressPageTextChange)
+            {
+                return;
+            }
+
             //Envair a la página que se escriba en el textbox
             if (int.TryParse(tbPage.Text, out int pageNum) &&
-                pageNum > 0 && pageNum <= _debugPages.Count)
+                pageNum > 0 && pageNum <= _pageAnswers.Count)
             {
                 _currentPage = pageNum - 1; // Convertir a índice 0
-                DisplayPage(_currentPage);
-                btnPrev.Enabled = _currentPage > 0;
-                btnNext.Enabled = _currentPage < _debugPages.Count - 1;
-                dgvHead.ClearSelection();
-                dgvHead.Rows[_currentPage].Selected = true;
-                dgvHead.FirstDisplayedScrollingRowIndex = _currentPage; // Desplazar al inicio de la página actual
+                ShowScanResult(_currentPage);
 
+                if (_currentPage >= 0 && _currentPage < _pageDnis.Count)
+                {
+                    SelectRowByDni(_pageDnis[_currentPage]);
+                }
             }
-            else
+
+            if (_pageAnswers.Count > 0)
             {
-                //MessageBox.Show("Número de página inválido.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
+                lblPageInfo.Text = $"{_currentPage + 1} / {_pageAnswers.Count}";
             }
-            // Actualizar el texto del label de info de página
-            lblPageInfo.Text = $"{_currentPage + 1} / {_debugPages.Count}";
         }
 
         private void Form1_Resize(object sender, EventArgs e)
