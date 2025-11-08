@@ -1,53 +1,65 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "D:\\INTI\\ContrlAcademico\\",
+  "WorkspaceRootPath": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\contrlacademico\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\intysoft\\scanhojarespuesta\\loginform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:loginform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\contrlacademico\\services\\perspectivecorrector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:services\\perspectivecorrector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\loginform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:loginform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|D:\\INTI\\ContrlAcademico\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
-      "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\contrlacademico\\services\\dniextractor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:services\\dniextractor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\contrlacademico\\config.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\intysoft\\scanhojarespuesta\\config.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:config.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\contrlacademico\\configmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:configmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\intysoft\\scanhojarespuesta\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\contrlacademico\\perspectivecorrector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:perspectivecorrector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\contrlacademico\\services\\omrprocessor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\intysoft\\scanhojarespuesta\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\intysoft\\scanhojarespuesta\\services\\omrprocessor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:services\\omrprocessor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\contrlacademico\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\contrlacademico\\services\\dnireader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\intysoft\\scanhojarespuesta\\services\\dnireader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:services\\dnireader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\contrlacademico\\services\\rotationcorrector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\intysoft\\scanhojarespuesta\\configmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:configmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\intysoft\\scanhojarespuesta\\services\\dniextractor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:services\\dniextractor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\intysoft\\scanhojarespuesta\\services\\perspectivecorrector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:services\\perspectivecorrector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\intysoft\\scanhojarespuesta\\perspectivecorrector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:perspectivecorrector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\intysoft\\scanhojarespuesta\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\intysoft\\scanhojarespuesta\\services\\rotationcorrector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:services\\rotationcorrector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\contrlacademico\\services\\pdfrenderer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|d:\\inti\\intysoft\\scanhojarespuesta\\services\\pdfrenderer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C4349EB4-C965-4C2C-9104-C99062D8CEAD}|ContrlAcademico.csproj|solutionrelative:services\\pdfrenderer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
@@ -58,7 +70,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Bookmark",
@@ -69,52 +81,91 @@
               "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
             },
             {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{0ad07096-bba9-4900-a651-0598d26f6d24}"
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Form1.cs [Dise\u00F1o]",
+              "DocumentMoniker": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Form1.cs",
+              "RelativeDocumentMoniker": "Form1.cs",
+              "ToolTip": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Form1.cs [Dise\u00F1o]",
+              "RelativeToolTip": "Form1.cs [Dise\u00F1o]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-04T00:55:03.901Z",
+              "EditorCaption": " [Dise\u00F1o]"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 3,
               "Title": "Form1.cs",
-              "DocumentMoniker": "D:\\INTI\\ContrlAcademico\\Form1.cs",
+              "DocumentMoniker": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Form1.cs",
               "RelativeDocumentMoniker": "Form1.cs",
-              "ToolTip": "D:\\INTI\\ContrlAcademico\\Form1.cs",
+              "ToolTip": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Form1.cs",
               "RelativeToolTip": "Form1.cs",
-              "ViewState": "AgIAAN4BAAAAAAAAAAAAAOYBAAANAAAAAAAAAA==",
+              "ViewState": "AgIAAKgAAAAAAAAAAAAAAKIAAAA1AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-07-26T04:00:01.879Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "Form1.cs [Dise\u00F1o]",
-              "DocumentMoniker": "D:\\INTI\\ContrlAcademico\\Form1.cs",
-              "RelativeDocumentMoniker": "Form1.cs",
-              "ToolTip": "D:\\INTI\\ContrlAcademico\\Form1.cs [Dise\u00F1o]",
-              "RelativeToolTip": "Form1.cs [Dise\u00F1o]",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-08-04T00:55:03.901Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "PerspectiveCorrector.cs",
-              "DocumentMoniker": "D:\\INTI\\ContrlAcademico\\PerspectiveCorrector.cs",
-              "RelativeDocumentMoniker": "PerspectiveCorrector.cs",
-              "ToolTip": "D:\\INTI\\ContrlAcademico\\PerspectiveCorrector.cs",
-              "RelativeToolTip": "PerspectiveCorrector.cs",
-              "ViewState": "AgIAAAIAAAAAAAAAAAAAAAYAAAAZAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-28T06:05:37.559Z"
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "LoginForm.cs [Dise\u00F1o]",
+              "DocumentMoniker": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\LoginForm.cs",
+              "RelativeDocumentMoniker": "LoginForm.cs",
+              "ToolTip": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\LoginForm.cs [Dise\u00F1o]",
+              "RelativeToolTip": "LoginForm.cs [Dise\u00F1o]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-28T22:33:29.635Z",
+              "EditorCaption": " [Dise\u00F1o]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "LoginForm.cs",
+              "DocumentMoniker": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\LoginForm.cs",
+              "RelativeDocumentMoniker": "LoginForm.cs",
+              "ToolTip": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\LoginForm.cs",
+              "RelativeToolTip": "LoginForm.cs",
+              "ViewState": "AgIAACAAAAAAAAAAAAAswCcAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-28T22:33:37.888Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{0ad07096-bba9-4900-a651-0598d26f6d24}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "config.json",
+              "DocumentMoniker": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\config.json",
+              "RelativeDocumentMoniker": "config.json",
+              "ToolTip": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\config.json",
+              "RelativeToolTip": "config.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-07-26T06:08:22.258Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "DniExtractor.cs",
+              "DocumentMoniker": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Services\\DniExtractor.cs",
+              "RelativeDocumentMoniker": "Services\\DniExtractor.cs",
+              "ToolTip": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Services\\DniExtractor.cs",
+              "RelativeToolTip": "Services\\DniExtractor.cs",
+              "ViewState": "AgIAACgAAAAAAAAAAAAAwFAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-28T19:43:04.427Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
               "Title": "PerspectiveCorrector.cs",
-              "DocumentMoniker": "D:\\INTI\\ContrlAcademico\\Services\\PerspectiveCorrector.cs",
+              "DocumentMoniker": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Services\\PerspectiveCorrector.cs",
               "RelativeDocumentMoniker": "Services\\PerspectiveCorrector.cs",
-              "ToolTip": "D:\\INTI\\ContrlAcademico\\Services\\PerspectiveCorrector.cs",
+              "ToolTip": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Services\\PerspectiveCorrector.cs",
               "RelativeToolTip": "Services\\PerspectiveCorrector.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -122,47 +173,35 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "DniExtractor.cs",
-              "DocumentMoniker": "D:\\INTI\\ContrlAcademico\\Services\\DniExtractor.cs",
-              "RelativeDocumentMoniker": "Services\\DniExtractor.cs",
-              "ToolTip": "D:\\INTI\\ContrlAcademico\\Services\\DniExtractor.cs",
-              "RelativeToolTip": "Services\\DniExtractor.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAgAAAAiAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-28T19:43:04.427Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "config.json",
-              "DocumentMoniker": "D:\\INTI\\ContrlAcademico\\config.json",
-              "RelativeDocumentMoniker": "config.json",
-              "ToolTip": "D:\\INTI\\ContrlAcademico\\config.json",
-              "RelativeToolTip": "config.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAARAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-07-26T06:08:22.258Z"
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 5,
+              "Title": "AuthService.cs",
+              "DocumentMoniker": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Services\\AuthService.cs",
+              "RelativeDocumentMoniker": "Services\\AuthService.cs",
+              "ToolTip": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Services\\AuthService.cs",
+              "RelativeToolTip": "Services\\AuthService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-29T02:26:16.254Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
               "Title": "ConfigModel.cs",
-              "DocumentMoniker": "D:\\INTI\\ContrlAcademico\\ConfigModel.cs",
+              "DocumentMoniker": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\ConfigModel.cs",
               "RelativeDocumentMoniker": "ConfigModel.cs",
-              "ToolTip": "D:\\INTI\\ContrlAcademico\\ConfigModel.cs",
+              "ToolTip": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\ConfigModel.cs",
               "RelativeToolTip": "ConfigModel.cs",
-              "ViewState": "AgIAACQAAAAAAAAAAAAAAJ0AAAAFAAAAAAAAAA==",
+              "ViewState": "AgIAAIEAAAAAAAAAAAAAAJcAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-07-26T04:20:31.034Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 12,
               "Title": "Program.cs",
-              "DocumentMoniker": "D:\\INTI\\ContrlAcademico\\Program.cs",
+              "DocumentMoniker": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Program.cs",
               "RelativeDocumentMoniker": "Program.cs",
-              "ToolTip": "D:\\INTI\\ContrlAcademico\\Program.cs",
+              "ToolTip": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Program.cs",
               "RelativeToolTip": "Program.cs",
               "ViewState": "AgIAAAoAAAAAAAAAAAAAwBAAAAApAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -170,35 +209,47 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 7,
               "Title": "DniReader.cs",
-              "DocumentMoniker": "D:\\INTI\\ContrlAcademico\\Services\\DniReader.cs",
+              "DocumentMoniker": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Services\\DniReader.cs",
               "RelativeDocumentMoniker": "Services\\DniReader.cs",
-              "ToolTip": "D:\\INTI\\ContrlAcademico\\Services\\DniReader.cs",
+              "ToolTip": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Services\\DniReader.cs",
               "RelativeToolTip": "Services\\DniReader.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAADIAAAAvAAAAAAAAAA==",
+              "ViewState": "AgIAACEAAAAAAAAAAAAAwC4AAAAyAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-07-27T06:00:08.377Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 6,
               "Title": "OmrProcessor.cs",
-              "DocumentMoniker": "D:\\INTI\\ContrlAcademico\\Services\\OmrProcessor.cs",
+              "DocumentMoniker": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Services\\OmrProcessor.cs",
               "RelativeDocumentMoniker": "Services\\OmrProcessor.cs",
-              "ToolTip": "D:\\INTI\\ContrlAcademico\\Services\\OmrProcessor.cs",
+              "ToolTip": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Services\\OmrProcessor.cs",
               "RelativeToolTip": "Services\\OmrProcessor.cs",
-              "ViewState": "AgIAAK8AAAAAAAAAAAAuwLwAAAAsAAAAAAAAAA==",
+              "ViewState": "AgIAACEAAAAAAAAAAAAAAAsAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-07-26T05:12:50.873Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 11,
+              "Title": "PerspectiveCorrector.cs",
+              "DocumentMoniker": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\PerspectiveCorrector.cs",
+              "RelativeDocumentMoniker": "PerspectiveCorrector.cs",
+              "ToolTip": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\PerspectiveCorrector.cs",
+              "RelativeToolTip": "PerspectiveCorrector.cs",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAAAAYAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-28T06:05:37.559Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
               "Title": "PdfRenderer.cs",
-              "DocumentMoniker": "D:\\INTI\\ContrlAcademico\\Services\\PdfRenderer.cs",
+              "DocumentMoniker": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Services\\PdfRenderer.cs",
               "RelativeDocumentMoniker": "Services\\PdfRenderer.cs",
-              "ToolTip": "D:\\INTI\\ContrlAcademico\\Services\\PdfRenderer.cs",
+              "ToolTip": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Services\\PdfRenderer.cs",
               "RelativeToolTip": "Services\\PdfRenderer.cs",
               "ViewState": "AgIAAAYAAAAAAAAAAAAAABoAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -206,11 +257,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 13,
               "Title": "RotationCorrector.cs",
-              "DocumentMoniker": "D:\\INTI\\ContrlAcademico\\Services\\RotationCorrector.cs",
+              "DocumentMoniker": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Services\\RotationCorrector.cs",
               "RelativeDocumentMoniker": "Services\\RotationCorrector.cs",
-              "ToolTip": "D:\\INTI\\ContrlAcademico\\Services\\RotationCorrector.cs",
+              "ToolTip": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\Services\\RotationCorrector.cs",
               "RelativeToolTip": "Services\\RotationCorrector.cs",
               "ViewState": "AgIAACcAAAAAAAAAAAAAADYAAAAqAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",

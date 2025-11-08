@@ -63,6 +63,7 @@ namespace ContrlAcademico
                 }
 
                 AuthToken = response.Token;
+
                 DialogResult = DialogResult.OK;
                 Close();
             }

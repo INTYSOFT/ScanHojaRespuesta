@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\INTI\\ContrlAcademico\\ContrlAcademico.csproj": {}
+    "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\ContrlAcademico.csproj": {}
   },
   "projects": {
-    "D:\\INTI\\ContrlAcademico\\ContrlAcademico.csproj": {
+    "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\ContrlAcademico.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\INTI\\ContrlAcademico\\ContrlAcademico.csproj",
+        "projectUniqueName": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\ContrlAcademico.csproj",
         "projectName": "ContrlAcademico",
-        "projectPath": "D:\\INTI\\ContrlAcademico\\ContrlAcademico.csproj",
+        "projectPath": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\ContrlAcademico.csproj",
         "packagesPath": "C:\\Users\\omara\\.nuget\\packages\\",
-        "outputPath": "D:\\INTI\\ContrlAcademico\\obj\\",
+        "outputPath": "D:\\INTI\\INTYSoft\\ScanHojaRespuesta\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -102,7 +102,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

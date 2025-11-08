@@ -173,7 +173,7 @@
             dgvHead.CellContentClick += dgvHead_CellContentClick;
             // 
             // dgvDetalle
-            //
+            // 
             dgvDetalle.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvDetalle.Location = new Point(24, 1181);
             dgvDetalle.Margin = new Padding(7);
@@ -181,30 +181,30 @@
             dgvDetalle.RowHeadersWidth = 62;
             dgvDetalle.Size = new Size(1392, 734);
             dgvDetalle.TabIndex = 18;
-            //
+            // 
             // cmbEvaluaciones
-            //
+            // 
             cmbEvaluaciones.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbEvaluaciones.FormattingEnabled = true;
-            cmbEvaluaciones.Location = new Point(35, 240);
+            cmbEvaluaciones.Location = new Point(722, 356);
             cmbEvaluaciones.Margin = new Padding(7);
             cmbEvaluaciones.Name = "cmbEvaluaciones";
             cmbEvaluaciones.Size = new Size(619, 65);
             cmbEvaluaciones.TabIndex = 19;
             cmbEvaluaciones.SelectedIndexChanged += cmbEvaluaciones_SelectedIndexChanged;
-            //
+            // 
             // lblEvaluacion
-            //
+            // 
             lblEvaluacion.AutoSize = true;
-            lblEvaluacion.Location = new Point(35, 186);
+            lblEvaluacion.Location = new Point(722, 280);
             lblEvaluacion.Margin = new Padding(7, 0, 7, 0);
             lblEvaluacion.Name = "lblEvaluacion";
-            lblEvaluacion.Size = new Size(395, 57);
+            lblEvaluacion.Size = new Size(461, 57);
             lblEvaluacion.TabIndex = 20;
             lblEvaluacion.Text = "Evaluación programada";
-            //
+            // 
             // Form1
-            //
+            // 
             AutoScaleDimensions = new SizeF(23F, 57F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(3275, 1847);

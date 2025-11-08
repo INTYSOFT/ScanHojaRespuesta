@@ -19,6 +19,6 @@
     "blockSpacing": 100
   },
 
-  "apiEndpoint": "https:omr"
+  "apiEndpoint": "http://192.168.0.61:5000/"
 }
 
