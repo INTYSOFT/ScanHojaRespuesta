@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -92,9 +93,19 @@ public class EvaluacionProgramadaService
 
     private void PrepareClient(Uri baseUri, string token)
     {
-        _httpClient.BaseAddress = baseUri;
-        _httpClient.DefaultRequestHeaders.Accept.Clear();
-        _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        if (_httpClient.BaseAddress is null)
+        {
+            _httpClient.BaseAddress = baseUri;
+        }
+        else if (_httpClient.BaseAddress != baseUri)
+        {
+            throw new InvalidOperationException("El cliente HTTP ya está configurado con una URL base diferente.");
+        }
+
+        if (!_httpClient.DefaultRequestHeaders.Accept.Any(h => h.MediaType == "application/json"))
+        {
+            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        }
 
         _httpClient.DefaultRequestHeaders.Authorization = string.IsNullOrWhiteSpace(token)
             ? null
