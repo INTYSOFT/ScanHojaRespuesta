@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -37,8 +38,13 @@ public class EvaluacionProgramadaService
 
         PrepareClient(baseUri, token);
 
-        using var response = await _httpClient.GetAsync($"api/EvaluacionProgramada/estado/{estadoId}", cancellationToken)
+        using var response = await _httpClient.GetAsync($"api/EvaluacionProgramadums/estado/{estadoId}", cancellationToken)
             .ConfigureAwait(false);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return new List<EvaluacionProgramadaSummaryDto>();
+        }
 
         response.EnsureSuccessStatusCode();
 
@@ -67,8 +73,13 @@ public class EvaluacionProgramadaService
 
         PrepareClient(baseUri, token);
 
-        using var response = await _httpClient.GetAsync($"api/EvaluacionProgramada/{evaluacionProgramadaId}", cancellationToken)
+        using var response = await _httpClient.GetAsync($"consulta/evaluaciones-programadas/{evaluacionProgramadaId}", cancellationToken)
             .ConfigureAwait(false);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return new List<EvaluacionProgramadaConsultaDto>();
+        }
 
         response.EnsureSuccessStatusCode();
 

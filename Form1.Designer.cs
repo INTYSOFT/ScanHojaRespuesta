@@ -111,7 +111,7 @@
             // 
             // btnPrev
             // 
-            btnPrev.Location = new Point(24, 356);
+            btnPrev.Location = new Point(24, 386);
             btnPrev.Margin = new Padding(7);
             btnPrev.Name = "btnPrev";
             btnPrev.Size = new Size(184, 78);
@@ -122,7 +122,7 @@
             // 
             // btnNext
             // 
-            btnNext.Location = new Point(412, 363);
+            btnNext.Location = new Point(412, 393);
             btnNext.Margin = new Padding(7);
             btnNext.Name = "btnNext";
             btnNext.Size = new Size(205, 78);
@@ -153,7 +153,7 @@
             // 
             // tbPage
             // 
-            tbPage.Location = new Point(221, 363);
+            tbPage.Location = new Point(221, 393);
             tbPage.Margin = new Padding(7);
             tbPage.Name = "tbPage";
             tbPage.Size = new Size(172, 63);
@@ -186,17 +186,17 @@
             // 
             cmbEvaluaciones.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbEvaluaciones.FormattingEnabled = true;
-            cmbEvaluaciones.Location = new Point(722, 356);
+            cmbEvaluaciones.Location = new Point(35, 300);
             cmbEvaluaciones.Margin = new Padding(7);
             cmbEvaluaciones.Name = "cmbEvaluaciones";
-            cmbEvaluaciones.Size = new Size(619, 65);
+            cmbEvaluaciones.Size = new Size(614, 65);
             cmbEvaluaciones.TabIndex = 19;
             cmbEvaluaciones.SelectedIndexChanged += cmbEvaluaciones_SelectedIndexChanged;
             // 
             // lblEvaluacion
             // 
             lblEvaluacion.AutoSize = true;
-            lblEvaluacion.Location = new Point(722, 280);
+            lblEvaluacion.Location = new Point(35, 239);
             lblEvaluacion.Margin = new Padding(7, 0, 7, 0);
             lblEvaluacion.Name = "lblEvaluacion";
             lblEvaluacion.Size = new Size(461, 57);
