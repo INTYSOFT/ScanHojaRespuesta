@@ -1,0 +1,17 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.db
+*.cache
+*.tlog
+*.v2
+*.vsidx
+
+# Build outputs
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.sourcelink.json
