@@ -2,6 +2,8 @@
 using Newtonsoft.Json;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
+using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Net.Http;
 using System.Linq;
 
@@ -12,6 +14,7 @@ namespace ContrlAcademico
         // Para almacenar resultados por página
         private List<string> _pageDnis;
         private List<char[]> _pageAnswers;
+        private List<Rectangle?[]> _pageAnswerMarks;
 
 
         private ConfigModel _config;
@@ -388,6 +391,7 @@ namespace ContrlAcademico
         {
             _pageDnis = new List<string>();
             _pageAnswers = new List<char[]>();
+            _pageAnswerMarks = new List<Rectangle?[]>();
             _debugPages = new List<Bitmap>();
             _threshPages = new List<Bitmap>();
             _answersPages = new List<char[]>();
@@ -701,11 +705,12 @@ namespace ContrlAcademico
                         CalibrateGrid(gray);
                     }
 
-                    var answers = _omrProcessor.Process(warped);
+                    var omrResult = _omrProcessor.Process(warped);
                     warped.Dispose();
 
                     _pageDnis.Add(dni);
-                    _pageAnswers.Add(answers);
+                    _pageAnswers.Add(omrResult.Answers);
+                    _pageAnswerMarks.Add(omrResult.SelectedRegions);
 
                     UpdateRowWithScanData(dni, i, DateTime.Now);
 
@@ -754,7 +759,45 @@ namespace ContrlAcademico
             // debug (warped con rects)
             pbWarped.Image?.Dispose();
             // Clonamos para no disolver el original de la lista
-            pbWarped.Image = (Bitmap)_debugPages[index].Clone();
+            var pageBitmap = (Bitmap)_debugPages[index].Clone();
+
+            if (_pageAnswerMarks != null && index < _pageAnswerMarks.Count)
+            {
+                var marks = _pageAnswerMarks[index];
+                if (marks is { Length: > 0 })
+                {
+                    using var graphics = Graphics.FromImage(pageBitmap);
+                    graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+                    float penWidth = Math.Max(2f, Math.Min(pageBitmap.Width, pageBitmap.Height) / 400f);
+                    using var pen = new Pen(Color.LimeGreen, penWidth)
+                    {
+                        Alignment = PenAlignment.Center,
+                        LineJoin = LineJoin.Round
+                    };
+
+                    int inflate = (int)Math.Ceiling(penWidth);
+                    foreach (var mark in marks)
+                    {
+                        if (!mark.HasValue)
+                        {
+                            continue;
+                        }
+
+                        var rect = mark.Value;
+                        if (rect.Width <= 0 || rect.Height <= 0)
+                        {
+                            continue;
+                        }
+
+                        var inflated = Rectangle.Inflate(rect, inflate, inflate);
+                        graphics.DrawEllipse(pen, inflated);
+                    }
+                }
+            }
+
+            pbWarped.Image = pageBitmap;
 
             // thresh binarizado
             pbThresh.Image?.Dispose();
@@ -888,8 +931,8 @@ namespace ContrlAcademico
 
             // 3) Procesar OMR de respuestas sobre la página completa
             //    (si en realidad lo querías sobre el warped, pásale fullPage)
-            var answers = _omrProcessor.Process(fullPage);
-            _answersPages.Add(answers);
+            var pageResult = _omrProcessor.Process(fullPage);
+            _answersPages.Add(pageResult.Answers);
 
             // 4) Extraer el DNI con tu extractor (que aplica OMR 8×10 sobre la región)
             string dni = _dniExt.Extract(fullPage);

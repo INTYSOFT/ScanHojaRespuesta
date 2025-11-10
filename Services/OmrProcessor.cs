@@ -1,5 +1,6 @@
 ﻿using OpenCvSharp;
 using OpenCvSharp.Extensions;
+using System.Drawing;
 using System.Text;
 
 
@@ -7,6 +8,8 @@ using System.Text;
 namespace ContrlAcademico.Services
 {
 
+
+    public readonly record struct OmrProcessingResult(char[] Answers, Rectangle?[] SelectedRegions);
 
     public class OmrProcessor
     {
@@ -89,7 +92,9 @@ namespace ContrlAcademico.Services
         }
 
 
-        public char[] Process(Bitmap warpedBmp)
+        private readonly record struct OptionStat(int Option, double Mean, Rectangle Region);
+
+        public OmrProcessingResult Process(Bitmap warpedBmp)
         {
             // 1) Convertir a Mat y llevar a gris+blur
             using var src = BitmapConverter.ToMat(warpedBmp);
@@ -103,6 +108,7 @@ namespace ContrlAcademico.Services
             int space = _g.BlockSpacing;
 
             char[] answers = new char[rows * blocks];
+            Rectangle?[] selectedRegions = new Rectangle?[rows * blocks];
             int idx = 0;
 
             // 2) Recorremos cada bloque de preguntas
@@ -126,35 +132,39 @@ namespace ContrlAcademico.Services
                             int h2 = Math.Min(_g.BubbleH, gray.Height - y2);
 
                             if (w2 <= 0 || h2 <= 0)
-                                return (opt: c, mean: 255.0);
+                                return new OptionStat(c, 255.0, Rectangle.Empty);
 
                             // Extraemos ROI y recortamos la máscara al mismo tamaño
                             using var roi = new Mat(gray, new Rect(x2, y2, w2, h2));
                             using var maskROI = new Mat(_mask, new Rect(0, 0, w2, h2));
                             // Media ponderada
                             Scalar m = Cv2.Mean(roi, maskROI);
-                            return (opt: c, mean: m.Val0);
+                            return new OptionStat(c, m.Val0, new Rectangle(x2, y2, w2, h2));
                         })
-                        .OrderBy(t => t.mean) // las más oscuras (menor mean) primero
+                        .OrderBy(t => t.Mean) // las más oscuras (menor mean) primero
                         .ToArray();
 
-                    // 4) Decidir: 
-                    //    - si la mejor media > meanThreshold => ninguna  
+                    // 4) Decidir:
+                    //    - si la mejor media > meanThreshold => ninguna
                     //    - si la segunda es demasiado cercana => ambigua
                     var best = stats[0];
-                    if (best.mean > _meanThreshold ||
-                        (cols > 1 && stats[1].mean - best.mean < _deltaMin))
+                    if (best.Mean > _meanThreshold ||
+                        (cols > 1 && stats[1].Mean - best.Mean < _deltaMin))
                     {
                         answers[idx] = '-';
                     }
                     else
                     {
-                        answers[idx] = (char)('A' + best.opt);
+                        answers[idx] = (char)('A' + best.Option);
+                        if (!best.Region.IsEmpty)
+                        {
+                            selectedRegions[idx] = best.Region;
+                        }
                     }
                 }
             }
 
-            return answers;
+            return new OmrProcessingResult(answers, selectedRegions);
         }
 
         public char[] old_Process(Bitmap warped)
