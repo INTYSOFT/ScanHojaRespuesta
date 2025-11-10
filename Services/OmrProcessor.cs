@@ -1,5 +1,7 @@
 ﻿using OpenCvSharp;
 using OpenCvSharp.Extensions;
+using System;
+using System.Collections.Generic;
 using System.Text;
 
 
@@ -15,6 +17,7 @@ namespace ContrlAcademico.Services
         private readonly GridModel _grid;
         private readonly RegionModel _dniRegion;
         private readonly double _fillThreshold; // % de área para considerar marcado
+        private readonly double _fillSeparation; // diferencia mínima entre ratios de relleno
         
 
         readonly GridModel _g;
@@ -65,7 +68,8 @@ namespace ContrlAcademico.Services
              double fillThreshold = 0.5,
 
             double meanThreshold = 180,   // intensidad media > esto → “sin marca”
-            double deltaMin = 30)    // si 2º media – 1º media < deltaMin → ambigüedad
+            double deltaMin = 30,    // si 2º media – 1º media < deltaMin → ambigüedad
+            double fillSeparation = 0.08)
         {
             _g = grid;
             _meanThreshold = meanThreshold;
@@ -73,6 +77,7 @@ namespace ContrlAcademico.Services
 
             _dniRegion     = dniRegion ?? throw new ArgumentNullException(nameof(dniRegion));
             _fillThreshold = fillThreshold;
+            _fillSeparation = fillSeparation;
 
 
             // Creamos la máscara elíptica del tamaño exacto de la burbuja:
@@ -97,10 +102,25 @@ namespace ContrlAcademico.Services
             Cv2.CvtColor(src, gray, ColorConversionCodes.BGR2GRAY);
             Cv2.GaussianBlur(gray, gray, new OpenCvSharp.Size(5, 5), 0);
 
+            using var thresh = new Mat();
+            Cv2.AdaptiveThreshold(
+                gray,
+                thresh,
+                maxValue: 255,
+                adaptiveMethod: AdaptiveThresholdTypes.GaussianC,
+                thresholdType: ThresholdTypes.BinaryInv,
+                blockSize: 15,
+                c: 3);
+
             int rows = _g.Rows;
             int cols = _g.Cols;
             int blocks = _g.BlockCount;
             int space = _g.BlockSpacing;
+
+            if (rows <= 0 || cols <= 0 || blocks <= 0)
+            {
+                return Array.Empty<char>();
+            }
 
             char[] answers = new char[rows * blocks];
             int idx = 0;
@@ -114,47 +134,83 @@ namespace ContrlAcademico.Services
                 {
                     int y = _g.StartY + r * _g.Dy;
 
-                    // 3) Para cada opción A–E calculamos la media dentro de la elipse
-                    var stats = Enumerable.Range(0, cols)
-                        .Select(c =>
+                    var scores = new BubbleScore[cols];
+
+                    for (int c = 0; c < cols; c++)
+                    {
+                        int x = baseX + c * _g.Dx;
+                        int x2 = Math.Clamp(x, 0, gray.Width);
+                        int y2 = Math.Clamp(y, 0, gray.Height);
+                        int w2 = Math.Min(_g.BubbleW, gray.Width - x2);
+                        int h2 = Math.Min(_g.BubbleH, gray.Height - y2);
+
+                        if (w2 <= 0 || h2 <= 0)
                         {
-                            int x = baseX + c * _g.Dx;
-                            // Clamp ROI
-                            int x2 = Math.Clamp(x, 0, gray.Width);
-                            int y2 = Math.Clamp(y, 0, gray.Height);
-                            int w2 = Math.Min(_g.BubbleW, gray.Width  - x2);
-                            int h2 = Math.Min(_g.BubbleH, gray.Height - y2);
+                            scores[c] = new BubbleScore(c, 255.0, 0.0);
+                            continue;
+                        }
 
-                            if (w2 <= 0 || h2 <= 0)
-                                return (opt: c, mean: 255.0);
+                        using var roiGray = new Mat(gray, new Rect(x2, y2, w2, h2));
+                        using var roiThresh = new Mat(thresh, new Rect(x2, y2, w2, h2));
+                        using var maskROI = new Mat(_mask, new Rect(0, 0, w2, h2));
 
-                            // Extraemos ROI y recortamos la máscara al mismo tamaño
-                            using var roi = new Mat(gray, new Rect(x2, y2, w2, h2));
-                            using var maskROI = new Mat(_mask, new Rect(0, 0, w2, h2));
-                            // Media ponderada
-                            Scalar m = Cv2.Mean(roi, maskROI);
-                            return (opt: c, mean: m.Val0);
-                        })
-                        .OrderBy(t => t.mean) // las más oscuras (menor mean) primero
-                        .ToArray();
+                        Scalar mean = Cv2.Mean(roiGray, maskROI);
+                        double fillRatio = Cv2.Mean(roiThresh, maskROI).Val0 / 255.0;
 
-                    // 4) Decidir: 
-                    //    - si la mejor media > meanThreshold => ninguna  
-                    //    - si la segunda es demasiado cercana => ambigua
-                    var best = stats[0];
-                    if (best.mean > _meanThreshold ||
-                        (cols > 1 && stats[1].mean - best.mean < _deltaMin))
-                    {
-                        answers[idx] = '-';
+                        scores[c] = new BubbleScore(c, mean.Val0, fillRatio);
                     }
-                    else
-                    {
-                        answers[idx] = (char)('A' + best.opt);
-                    }
+
+                    Array.Sort(scores, BubbleScoreComparer.Instance);
+
+                    var best = scores[0];
+                    var second = cols > 1 ? scores[1] : default;
+
+                    bool hasFilled = best.FillRatio >= _fillThreshold || best.Mean <= _meanThreshold;
+                    bool separated = cols == 1 ||
+                                     (best.FillRatio - second.FillRatio >= _fillSeparation ||
+                                      second.Mean - best.Mean >= _deltaMin);
+
+                    answers[idx] = hasFilled && separated
+                        ? (char)('A' + best.Option)
+                        : '-';
                 }
             }
 
             return answers;
+        }
+
+        private readonly struct BubbleScore
+        {
+            public BubbleScore(int option, double mean, double fillRatio)
+            {
+                Option = option;
+                Mean = mean;
+                FillRatio = fillRatio;
+            }
+
+            public int Option { get; }
+            public double Mean { get; }
+            public double FillRatio { get; }
+        }
+
+        private sealed class BubbleScoreComparer : IComparer<BubbleScore>
+        {
+            public static BubbleScoreComparer Instance { get; } = new BubbleScoreComparer();
+
+            private BubbleScoreComparer()
+            {
+            }
+
+            public int Compare(BubbleScore x, BubbleScore y)
+            {
+                int fillComparison = y.FillRatio.CompareTo(x.FillRatio);
+                if (fillComparison != 0)
+                {
+                    return fillComparison;
+                }
+
+                return x.Mean.CompareTo(y.Mean);
+            }
         }
 
         public char[] old_Process(Bitmap warped)
