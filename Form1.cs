@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using System.Net.Http;
+using System.Linq;
 
 namespace ContrlAcademico
 {
@@ -42,6 +43,21 @@ namespace ContrlAcademico
         private List<EvaluacionProgramadaConsultaDto> _evaluacionParticipantes = new();
         private readonly Dictionary<string, int> _dniToScanIndex = new(StringComparer.OrdinalIgnoreCase);
         private bool _suppressPageTextChange;
+        private bool _isPopulatingSecciones;
+
+        private sealed class SectionItem
+        {
+            public SectionItem(string display, string? value)
+            {
+                Display = display;
+                Value = value;
+            }
+
+            public string Display { get; }
+            public string? Value { get; }
+
+            public override string ToString() => Display;
+        }
 
         public Form1(string? authToken = null)
         {
@@ -168,6 +184,7 @@ namespace ContrlAcademico
             try
             {
                 cmbEvaluaciones.Enabled = false;
+                ResetSecciones();
 
                 if (string.IsNullOrWhiteSpace(_authToken))
                 {
@@ -189,6 +206,9 @@ namespace ContrlAcademico
                 {
                     cmbEvaluaciones.DataSource = null;
                     lblEvaluacion.Text = "No existen evaluaciones programadas";
+                    _evaluacionParticipantes.Clear();
+                    dgvHead.Rows.Clear();
+                    ResetSecciones();
                     return;
                 }
 
@@ -200,6 +220,7 @@ namespace ContrlAcademico
             }
             catch (HttpRequestException ex)
             {
+                ResetSecciones();
                 MessageBox.Show(
                     $"Error de conexión al cargar las evaluaciones programadas: {ex.Message}",
                     "Error de red",
@@ -208,6 +229,7 @@ namespace ContrlAcademico
             }
             catch (Exception ex)
             {
+                ResetSecciones();
                 MessageBox.Show(
                     $"Error al cargar las evaluaciones programadas: {ex.Message}",
                     "Error",
@@ -220,16 +242,18 @@ namespace ContrlAcademico
         {
             try
             {
+                ResetSecciones();
                 var detalle = await _evaluacionService
                     .ObtenerDetalleAsync(_config.ApiEndpoint, evaluacionProgramadaId, _authToken ?? string.Empty)
                     .ConfigureAwait(true);
 
                 _evaluacionParticipantes = detalle.ToList();
-                PopulateHeadGrid(_evaluacionParticipantes);
                 ClearScanResults();
+                PopulateSecciones(_evaluacionParticipantes);
             }
             catch (HttpRequestException ex)
             {
+                ResetSecciones();
                 MessageBox.Show(
                     $"Error de conexión al consultar la evaluación seleccionada: {ex.Message}",
                     "Error de red",
@@ -238,6 +262,7 @@ namespace ContrlAcademico
             }
             catch (Exception ex)
             {
+                ResetSecciones();
                 MessageBox.Show(
                     $"Error al consultar la evaluación seleccionada: {ex.Message}",
                     "Error",
@@ -270,6 +295,93 @@ namespace ContrlAcademico
             }
 
             dgvHead.ClearSelection();
+        }
+
+        private void PopulateSecciones(IEnumerable<EvaluacionProgramadaConsultaDto> participantes)
+        {
+            _isPopulatingSecciones = true;
+            try
+            {
+                cmbSecciones.DataSource = null;
+                cmbSecciones.Items.Clear();
+
+                var sections = participantes
+                    .Select(p => NormalizeSection(p.Seccion))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Select(section => new SectionItem(section ?? "Sin sección", section))
+                    .OrderBy(item => item.Display, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (sections.Count == 0)
+                {
+                    cmbSecciones.Enabled = false;
+                    cmbSecciones.Items.Add("Sin secciones disponibles");
+                    cmbSecciones.SelectedIndex = 0;
+                    dgvHead.Rows.Clear();
+                    return;
+                }
+
+                cmbSecciones.Enabled = true;
+                cmbSecciones.DataSource = sections;
+                cmbSecciones.DisplayMember = nameof(SectionItem.Display);
+                cmbSecciones.ValueMember = nameof(SectionItem.Value);
+            }
+            finally
+            {
+                _isPopulatingSecciones = false;
+            }
+
+            ApplySectionFilter();
+        }
+
+        private void ResetSecciones()
+        {
+            _isPopulatingSecciones = true;
+            try
+            {
+                cmbSecciones.DataSource = null;
+                cmbSecciones.Items.Clear();
+                cmbSecciones.Enabled = false;
+            }
+            finally
+            {
+                _isPopulatingSecciones = false;
+            }
+        }
+
+        private void ApplySectionFilter()
+        {
+            if (_isPopulatingSecciones)
+            {
+                return;
+            }
+
+            if (cmbSecciones.SelectedItem is not SectionItem selectedSection)
+            {
+                dgvHead.Rows.Clear();
+                return;
+            }
+
+            var filtered = _evaluacionParticipantes
+                .Where(participante => SectionMatches(participante, selectedSection))
+                .ToList();
+
+            PopulateHeadGrid(filtered);
+        }
+
+        private static string? NormalizeSection(string? seccion)
+            => string.IsNullOrWhiteSpace(seccion) ? null : seccion.Trim();
+
+        private static bool SectionMatches(EvaluacionProgramadaConsultaDto participante, SectionItem selectedSection)
+        {
+            var participanteSeccion = NormalizeSection(participante.Seccion);
+
+            if (selectedSection.Value is null)
+            {
+                return participanteSeccion is null;
+            }
+
+            return string.Equals(participanteSeccion, selectedSection.Value, StringComparison.OrdinalIgnoreCase);
         }
 
         private void ClearScanResults()
@@ -324,10 +436,18 @@ namespace ContrlAcademico
         {
             if (cmbEvaluaciones.SelectedItem is not EvaluacionProgramadaSummaryDto evaluacion)
             {
+                _evaluacionParticipantes.Clear();
+                dgvHead.Rows.Clear();
+                ResetSecciones();
                 return;
             }
 
             await LoadEvaluacionDetalleAsync(evaluacion.Id);
+        }
+
+        private void cmbSecciones_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ApplySectionFilter();
         }
 
         private void UpdateRowWithScanData(string dni, int scanIndex, DateTime fechaProcesamiento)

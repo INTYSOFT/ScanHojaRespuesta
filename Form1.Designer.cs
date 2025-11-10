@@ -43,6 +43,8 @@
             dgvDetalle = new DataGridView();
             cmbEvaluaciones = new ComboBox();
             lblEvaluacion = new Label();
+            lblSeccion = new Label();
+            cmbSecciones = new ComboBox();
             ((System.ComponentModel.ISupportInitialize)pbWarped).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pbThresh).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pbDni).BeginInit();
@@ -171,9 +173,9 @@
             dgvHead.Size = new Size(1392, 597);
             dgvHead.TabIndex = 17;
             dgvHead.CellContentClick += dgvHead_CellContentClick;
-            // 
+            //
             // dgvDetalle
-            // 
+            //
             dgvDetalle.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvDetalle.Location = new Point(24, 1181);
             dgvDetalle.Margin = new Padding(7);
@@ -181,9 +183,9 @@
             dgvDetalle.RowHeadersWidth = 62;
             dgvDetalle.Size = new Size(1392, 734);
             dgvDetalle.TabIndex = 18;
-            // 
+            //
             // cmbEvaluaciones
-            // 
+            //
             cmbEvaluaciones.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbEvaluaciones.FormattingEnabled = true;
             cmbEvaluaciones.Location = new Point(35, 300);
@@ -192,9 +194,9 @@
             cmbEvaluaciones.Size = new Size(614, 65);
             cmbEvaluaciones.TabIndex = 19;
             cmbEvaluaciones.SelectedIndexChanged += cmbEvaluaciones_SelectedIndexChanged;
-            // 
+            //
             // lblEvaluacion
-            // 
+            //
             lblEvaluacion.AutoSize = true;
             lblEvaluacion.Location = new Point(35, 239);
             lblEvaluacion.Margin = new Padding(7, 0, 7, 0);
@@ -202,12 +204,35 @@
             lblEvaluacion.Size = new Size(461, 57);
             lblEvaluacion.TabIndex = 20;
             lblEvaluacion.Text = "Evaluación programada";
-            // 
+            //
+            // lblSeccion
+            //
+            lblSeccion.AutoSize = true;
+            lblSeccion.Location = new Point(691, 239);
+            lblSeccion.Margin = new Padding(7, 0, 7, 0);
+            lblSeccion.Name = "lblSeccion";
+            lblSeccion.Size = new Size(192, 57);
+            lblSeccion.TabIndex = 21;
+            lblSeccion.Text = "Sección";
+            //
+            // cmbSecciones
+            //
+            cmbSecciones.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbSecciones.FormattingEnabled = true;
+            cmbSecciones.Location = new Point(691, 300);
+            cmbSecciones.Margin = new Padding(7);
+            cmbSecciones.Name = "cmbSecciones";
+            cmbSecciones.Size = new Size(614, 65);
+            cmbSecciones.TabIndex = 22;
+            cmbSecciones.SelectedIndexChanged += cmbSecciones_SelectedIndexChanged;
+            //
             // Form1
-            // 
+            //
             AutoScaleDimensions = new SizeF(23F, 57F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(3275, 1847);
+            Controls.Add(cmbSecciones);
+            Controls.Add(lblSeccion);
             Controls.Add(lblEvaluacion);
             Controls.Add(cmbEvaluaciones);
             Controls.Add(dgvDetalle);
@@ -253,5 +278,7 @@
         private DataGridView dgvDetalle;
         private ComboBox cmbEvaluaciones;
         private Label lblEvaluacion;
+        private Label lblSeccion;
+        private ComboBox cmbSecciones;
     }
 }
