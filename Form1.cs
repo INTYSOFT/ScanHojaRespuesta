@@ -569,9 +569,11 @@ namespace ContrlAcademico
             _omrProcessor = new OmrProcessor(
                 _config.AnswersGrid,
                 _config.DniRegion,
-                fillThreshold: 0.5,
-                meanThreshold: 180,
-                deltaMin: 30
+                fillThreshold: 0.32,
+                fillSeparation: 0.07,
+                meanThreshold: 200,
+                deltaMin: 18,
+                dniFillThreshold: 0.5
             );
         }
 
@@ -615,9 +617,11 @@ namespace ContrlAcademico
                 _omrProcessor = new OmrProcessor(
                     _config.AnswersGrid,
                     _config.DniRegion,    // ← aquí
-                       fillThreshold: 0.5,   // o el umbral de relleno que quieras
-                    meanThreshold: 180,   // Ajusta según tus necesidades
-                    deltaMin: 30          // Ajusta según tus necesidades
+                    fillThreshold: 0.32,
+                    fillSeparation: 0.07,
+                    meanThreshold: 200,
+                    deltaMin: 18,
+                    dniFillThreshold: 0.5
                 );
 
                 //logs.AppendText("Configuración cargada y OMR listo.\n");
