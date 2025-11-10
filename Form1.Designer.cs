@@ -54,10 +54,9 @@
             // 
             // btnSelectPdf
             // 
-            btnSelectPdf.Location = new Point(35, 27);
-            btnSelectPdf.Margin = new Padding(7);
+            btnSelectPdf.Location = new Point(15, 12);
             btnSelectPdf.Name = "btnSelectPdf";
-            btnSelectPdf.Size = new Size(345, 78);
+            btnSelectPdf.Size = new Size(150, 34);
             btnSelectPdf.TabIndex = 0;
             btnSelectPdf.Text = "Seleccionar PDF";
             btnSelectPdf.UseVisualStyleBackColor = true;
@@ -65,18 +64,16 @@
             // 
             // txtPdfPath
             // 
-            txtPdfPath.Location = new Point(35, 148);
-            txtPdfPath.Margin = new Padding(7);
+            txtPdfPath.Location = new Point(176, 15);
             txtPdfPath.Name = "txtPdfPath";
-            txtPdfPath.Size = new Size(614, 63);
+            txtPdfPath.Size = new Size(343, 31);
             txtPdfPath.TabIndex = 1;
             // 
             // btnStart
             // 
-            btnStart.Location = new Point(447, 34);
-            btnStart.Margin = new Padding(7);
+            btnStart.Location = new Point(525, 13);
             btnStart.Name = "btnStart";
-            btnStart.Size = new Size(207, 78);
+            btnStart.Size = new Size(90, 34);
             btnStart.TabIndex = 4;
             btnStart.Text = "Iniciar";
             btnStart.UseVisualStyleBackColor = true;
@@ -84,18 +81,16 @@
             // 
             // progressBar
             // 
-            progressBar.Location = new Point(35, 479);
-            progressBar.Margin = new Padding(7);
+            progressBar.Location = new Point(15, 256);
             progressBar.Name = "progressBar";
-            progressBar.Size = new Size(1343, 78);
+            progressBar.Size = new Size(584, 34);
             progressBar.TabIndex = 6;
             // 
             // pbWarped
             // 
-            pbWarped.Location = new Point(1447, 16);
-            pbWarped.Margin = new Padding(7);
+            pbWarped.Location = new Point(629, 7);
             pbWarped.Name = "pbWarped";
-            pbWarped.Size = new Size(715, 626);
+            pbWarped.Size = new Size(311, 275);
             pbWarped.SizeMode = PictureBoxSizeMode.Zoom;
             pbWarped.TabIndex = 8;
             pbWarped.TabStop = false;
@@ -103,20 +98,18 @@
             // 
             // pbThresh
             // 
-            pbThresh.Location = new Point(1185, 34);
-            pbThresh.Margin = new Padding(7);
+            pbThresh.Location = new Point(530, 149);
             pbThresh.Name = "pbThresh";
-            pbThresh.Size = new Size(209, 185);
+            pbThresh.Size = new Size(85, 75);
             pbThresh.SizeMode = PictureBoxSizeMode.Zoom;
             pbThresh.TabIndex = 9;
             pbThresh.TabStop = false;
             // 
             // btnPrev
             // 
-            btnPrev.Location = new Point(24, 386);
-            btnPrev.Margin = new Padding(7);
+            btnPrev.Location = new Point(10, 211);
             btnPrev.Name = "btnPrev";
-            btnPrev.Size = new Size(184, 78);
+            btnPrev.Size = new Size(80, 34);
             btnPrev.TabIndex = 10;
             btnPrev.Text = "Anterior";
             btnPrev.UseVisualStyleBackColor = true;
@@ -124,10 +117,9 @@
             // 
             // btnNext
             // 
-            btnNext.Location = new Point(412, 393);
-            btnNext.Margin = new Padding(7);
+            btnNext.Location = new Point(179, 214);
             btnNext.Name = "btnNext";
-            btnNext.Size = new Size(205, 78);
+            btnNext.Size = new Size(105, 34);
             btnNext.TabIndex = 11;
             btnNext.Text = "Siguiente";
             btnNext.UseVisualStyleBackColor = true;
@@ -136,101 +128,92 @@
             // lblPageInfo
             // 
             lblPageInfo.AutoSize = true;
-            lblPageInfo.Location = new Point(35, 280);
-            lblPageInfo.Margin = new Padding(7, 0, 7, 0);
+            lblPageInfo.Location = new Point(15, 183);
             lblPageInfo.Name = "lblPageInfo";
-            lblPageInfo.Size = new Size(136, 57);
+            lblPageInfo.Size = new Size(59, 25);
             lblPageInfo.TabIndex = 12;
             lblPageInfo.Text = "label1";
             // 
             // pbDni
             // 
-            pbDni.Location = new Point(955, 34);
-            pbDni.Margin = new Padding(7);
+            pbDni.Location = new Point(530, 59);
             pbDni.Name = "pbDni";
-            pbDni.Size = new Size(205, 185);
+            pbDni.Size = new Size(85, 71);
             pbDni.SizeMode = PictureBoxSizeMode.Zoom;
             pbDni.TabIndex = 13;
             pbDni.TabStop = false;
             // 
             // tbPage
             // 
-            tbPage.Location = new Point(221, 393);
-            tbPage.Margin = new Padding(7);
+            tbPage.Location = new Point(96, 214);
             tbPage.Name = "tbPage";
-            tbPage.Size = new Size(172, 63);
+            tbPage.Size = new Size(77, 31);
             tbPage.TabIndex = 15;
             tbPage.TextChanged += textBox1_TextChanged;
             // 
             // dgvHead
             // 
             dgvHead.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvHead.Location = new Point(24, 570);
-            dgvHead.Margin = new Padding(7);
+            dgvHead.Location = new Point(10, 305);
             dgvHead.MultiSelect = false;
             dgvHead.Name = "dgvHead";
             dgvHead.RowHeadersWidth = 62;
-            dgvHead.Size = new Size(1392, 597);
+            dgvHead.Size = new Size(605, 225);
             dgvHead.TabIndex = 17;
             dgvHead.CellContentClick += dgvHead_CellContentClick;
-            //
+            // 
             // dgvDetalle
-            //
+            // 
             dgvDetalle.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvDetalle.Location = new Point(24, 1181);
-            dgvDetalle.Margin = new Padding(7);
+            dgvDetalle.Location = new Point(10, 536);
             dgvDetalle.Name = "dgvDetalle";
             dgvDetalle.RowHeadersWidth = 62;
-            dgvDetalle.Size = new Size(1392, 734);
+            dgvDetalle.Size = new Size(605, 322);
             dgvDetalle.TabIndex = 18;
-            //
+            // 
             // cmbEvaluaciones
-            //
+            // 
             cmbEvaluaciones.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbEvaluaciones.FormattingEnabled = true;
-            cmbEvaluaciones.Location = new Point(35, 300);
-            cmbEvaluaciones.Margin = new Padding(7);
+            cmbEvaluaciones.Location = new Point(15, 80);
             cmbEvaluaciones.Name = "cmbEvaluaciones";
-            cmbEvaluaciones.Size = new Size(614, 65);
+            cmbEvaluaciones.Size = new Size(504, 33);
             cmbEvaluaciones.TabIndex = 19;
             cmbEvaluaciones.SelectedIndexChanged += cmbEvaluaciones_SelectedIndexChanged;
-            //
+            // 
             // lblEvaluacion
-            //
+            // 
             lblEvaluacion.AutoSize = true;
-            lblEvaluacion.Location = new Point(35, 239);
-            lblEvaluacion.Margin = new Padding(7, 0, 7, 0);
+            lblEvaluacion.Location = new Point(15, 52);
             lblEvaluacion.Name = "lblEvaluacion";
-            lblEvaluacion.Size = new Size(461, 57);
+            lblEvaluacion.Size = new Size(199, 25);
             lblEvaluacion.TabIndex = 20;
             lblEvaluacion.Text = "Evaluación programada";
-            //
+            // 
             // lblSeccion
-            //
+            // 
             lblSeccion.AutoSize = true;
-            lblSeccion.Location = new Point(691, 239);
-            lblSeccion.Margin = new Padding(7, 0, 7, 0);
+            lblSeccion.Location = new Point(15, 123);
             lblSeccion.Name = "lblSeccion";
-            lblSeccion.Size = new Size(192, 57);
+            lblSeccion.Size = new Size(72, 25);
             lblSeccion.TabIndex = 21;
             lblSeccion.Text = "Sección";
-            //
+            // 
             // cmbSecciones
-            //
+            // 
             cmbSecciones.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbSecciones.FormattingEnabled = true;
-            cmbSecciones.Location = new Point(691, 300);
-            cmbSecciones.Margin = new Padding(7);
+            cmbSecciones.Location = new Point(15, 149);
             cmbSecciones.Name = "cmbSecciones";
-            cmbSecciones.Size = new Size(614, 65);
+            cmbSecciones.Size = new Size(269, 33);
             cmbSecciones.TabIndex = 22;
             cmbSecciones.SelectedIndexChanged += cmbSecciones_SelectedIndexChanged;
-            //
+            // 
             // Form1
-            //
-            AutoScaleDimensions = new SizeF(23F, 57F);
+            // 
+            AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(3275, 1847);
+            ClientSize = new Size(1210, 742);
             Controls.Add(cmbSecciones);
             Controls.Add(lblSeccion);
             Controls.Add(lblEvaluacion);
@@ -248,7 +231,6 @@
             Controls.Add(btnStart);
             Controls.Add(txtPdfPath);
             Controls.Add(btnSelectPdf);
-            Margin = new Padding(7);
             Name = "Form1";
             Text = "Form1";
             Load += Form1_Load;
