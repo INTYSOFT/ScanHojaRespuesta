@@ -13,66 +13,112 @@ namespace ContrlAcademico
     {
         public Bitmap Correct(Bitmap input, out Point2f[] srcCorners, out Point2f[] dstCorners)
         {
-            // 1) Bitmap → Mat
-            //Mat src = input.ToMat();
-            Mat src = BitmapConverter.ToMat(input);
+            using var src = BitmapConverter.ToMat(input);
+            int width = src.Width;
+            int height = src.Height;
 
-            // 2) Gris + Blur + Canny
-            Mat gray = new Mat();
+            using var gray = new Mat();
             Cv2.CvtColor(src, gray, ColorConversionCodes.BGR2GRAY);
-            //Cv2.GaussianBlur(gray, gray, new Size(5, 5), 0);
+
             Cv2.GaussianBlur(gray, gray, new OpenCvSharp.Size(5, 5), 0);
-            Mat edges = new Mat();
+
+            using var edges = new Mat();
             Cv2.Canny(gray, edges, 50, 150);
 
-            // 3) Contornos y polígono aproximado
-            var contours = Cv2.FindContoursAsArray(edges,
-                RetrievalModes.List, ContourApproximationModes.ApproxSimple)
-                .OrderByDescending(c => Cv2.ContourArea(c))
-                .ToList();
+            using var kernel = Cv2.GetStructuringElement(MorphShapes.Rect, new OpenCvSharp.Size(5, 5));
+            Cv2.Dilate(edges, edges, kernel);
 
-            Point2f[] quad = null;
-            foreach (var c in contours)
+            var contours = Cv2.FindContoursAsArray(edges,
+                RetrievalModes.External,
+                ContourApproximationModes.ApproxSimple);
+
+            Point[]? bestQuad = null;
+            double bestArea = 0;
+
+            float tolX = Math.Max(5f, width * 0.05f);
+            float tolY = Math.Max(5f, height * 0.05f);
+
+            foreach (var contour in contours)
             {
-                var peri = Cv2.ArcLength(c, true);
-                var approx = Cv2.ApproxPolyDP(c, 0.02 * peri, true);
-                if (approx.Length == 4)
+                var perimeter = Cv2.ArcLength(contour, true);
+                var approx = Cv2.ApproxPolyDP(contour, 0.02 * perimeter, true);
+                if (approx.Length != 4)
                 {
-                    quad = approx.Select(p => new Point2f(p.X, p.Y)).ToArray();
-                    break;
+                    continue;
+                }
+
+                var xs = approx.Select(p => p.X).ToArray();
+                var ys = approx.Select(p => p.Y).ToArray();
+
+                bool touchesLeft = xs.Any(x => x <= tolX);
+                bool touchesRight = xs.Any(x => x >= width - tolX);
+                bool touchesTop = ys.Any(y => y <= tolY);
+                bool touchesBottom = ys.Any(y => y >= height - tolY);
+
+                if (!(touchesLeft && touchesRight && touchesTop && touchesBottom))
+                {
+                    continue;
+                }
+
+                double area = Math.Abs(Cv2.ContourArea(approx));
+                if (area > bestArea)
+                {
+                    bestArea = area;
+                    bestQuad = approx;
                 }
             }
-            if (quad == null)
-                throw new Exception("No se detectó un contorno de 4 vértices.");
 
-            // 4) Ordenar vértices en TL, TR, BR, BL
+            if (bestQuad == null)
+            {
+                foreach (var contour in contours.OrderByDescending(c => Math.Abs(Cv2.ContourArea(c))))
+                {
+                    var perimeter = Cv2.ArcLength(contour, true);
+                    var approx = Cv2.ApproxPolyDP(contour, 0.02 * perimeter, true);
+                    if (approx.Length != 4)
+                    {
+                        continue;
+                    }
+
+                    double area = Math.Abs(Cv2.ContourArea(approx));
+                    if (area > bestArea)
+                    {
+                        bestArea = area;
+                        bestQuad = approx;
+                    }
+                }
+            }
+
+            if (bestQuad == null)
+            {
+                throw new Exception("No se detectó un contorno de 4 vértices.");
+            }
+
+            var quad = bestQuad.Select(p => new Point2f(p.X, p.Y)).ToArray();
             srcCorners = OrderCorners(quad);
 
-            // 5) Calcular ancho/alto destino
-            float widthA = Distance(srcCorners[2], srcCorners[3]);
-            float widthB = Distance(srcCorners[1], srcCorners[0]);
+            float widthA = Distance(srcCorners[1], srcCorners[0]);
+            float widthB = Distance(srcCorners[2], srcCorners[3]);
             float maxW = Math.Max(widthA, widthB);
 
             float heightA = Distance(srcCorners[1], srcCorners[2]);
             float heightB = Distance(srcCorners[0], srcCorners[3]);
             float maxH = Math.Max(heightA, heightB);
 
+            int destW = Math.Max(1, (int)Math.Round(maxW));
+            int destH = Math.Max(1, (int)Math.Round(maxH));
+
             dstCorners = new[]
             {
                 new Point2f(0, 0),
-                new Point2f(maxW - 1, 0),
-                new Point2f(maxW - 1, maxH - 1),
-                new Point2f(0, maxH - 1)
+                new Point2f(destW - 1, 0),
+                new Point2f(destW - 1, destH - 1),
+                new Point2f(0, destH - 1)
             };
 
-            // 6) Transformada de perspectiva
-            Mat transform = Cv2.GetPerspectiveTransform(srcCorners, dstCorners);
-            Mat warped = new Mat();
-            //Cv2.WarpPerspective(src, warped, transform, new Size((int)maxW, (int)maxH));
-            Cv2.WarpPerspective(src, warped, transform, new OpenCvSharp.Size((int)maxW, (int)maxH));
+            using var transform = Cv2.GetPerspectiveTransform(srcCorners, dstCorners);
+            using var warped = new Mat();
+            Cv2.WarpPerspective(src, warped, transform, new OpenCvSharp.Size(destW, destH));
 
-            // 7) Mat → Bitmap
-            //return BitmapConverter.ToBitmap(warped);
             return BitmapConverter.ToBitmap(warped);
         }
 
