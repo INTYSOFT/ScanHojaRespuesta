@@ -1005,6 +1005,23 @@ namespace ContrlAcademico
             {
                 btnStart.Enabled = true;
             }
+
+            if (!ValidateHeadGridRows(out var invalidRows))
+            {
+                if (invalidRows.Count > 0)
+                {
+                    dgvHead.ClearSelection();
+                    invalidRows[0].Selected = true;
+                    dgvHead.FirstDisplayedScrollingRowIndex = Math.Max(0, invalidRows[0].Index);
+                }
+
+                MessageBox.Show(
+                    "Complete los campos Página, DNI y Nombre antes de registrar los datos.",
+                    "Validación requerida",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
         }
 
 

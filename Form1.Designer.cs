@@ -84,9 +84,9 @@
             // 
             progressBar.Location = new Point(15, 256);
             progressBar.Name = "progressBar";
-            progressBar.Size = new Size(584, 34);
+            progressBar.Size = new Size(600, 34);
             progressBar.TabIndex = 6;
-            //
+            // 
             // pbWarped
             // 
             pbWarped.Location = new Point(629, 7);
@@ -99,7 +99,7 @@
             // 
             // pbThresh
             // 
-            pbThresh.Location = new Point(530, 149);
+            pbThresh.Location = new Point(533, 60);
             pbThresh.Name = "pbThresh";
             pbThresh.Size = new Size(85, 75);
             pbThresh.SizeMode = PictureBoxSizeMode.Zoom;
@@ -125,19 +125,20 @@
             btnNext.Text = "Siguiente";
             btnNext.UseVisualStyleBackColor = true;
             btnNext.Click += btnNext_Click;
-            //
+            // 
             // btnRegistrarDatos
-            //
-            btnRegistrarDatos.Location = new Point(629, 305);
+            // 
+            btnRegistrarDatos.FlatAppearance.MouseOverBackColor = Color.FromArgb(192, 64, 0);
+            btnRegistrarDatos.Location = new Point(427, 211);
             btnRegistrarDatos.Name = "btnRegistrarDatos";
             btnRegistrarDatos.Size = new Size(188, 34);
             btnRegistrarDatos.TabIndex = 23;
-            btnRegistrarDatos.Text = "Registrar datos";
+            btnRegistrarDatos.Text = "Registrar Respuestas";
             btnRegistrarDatos.UseVisualStyleBackColor = true;
             btnRegistrarDatos.Click += btnRegistrarDatos_Click;
-            //
+            // 
             // lblPageInfo
-            //
+            // 
             lblPageInfo.AutoSize = true;
             lblPageInfo.Location = new Point(15, 183);
             lblPageInfo.Name = "lblPageInfo";
