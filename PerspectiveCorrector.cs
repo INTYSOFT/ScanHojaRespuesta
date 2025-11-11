@@ -32,7 +32,7 @@ namespace ContrlAcademico
                 RetrievalModes.External,
                 ContourApproximationModes.ApproxSimple);
 
-            Point[]? bestQuad = null;
+            OpenCvSharp.Point[]? bestQuad = null;
             double bestArea = 0;
 
             float tolX = Math.Max(5f, width * 0.05f);

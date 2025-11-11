@@ -168,7 +168,7 @@
             dgvDetalle.Location = new Point(10, 536);
             dgvDetalle.Name = "dgvDetalle";
             dgvDetalle.RowHeadersWidth = 62;
-            dgvDetalle.Size = new Size(605, 322);
+            dgvDetalle.Size = new Size(605, 421);
             dgvDetalle.TabIndex = 18;
             // 
             // cmbEvaluaciones
@@ -213,7 +213,7 @@
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1210, 742);
+            ClientSize = new Size(1210, 969);
             Controls.Add(cmbSecciones);
             Controls.Add(lblSeccion);
             Controls.Add(lblEvaluacion);
