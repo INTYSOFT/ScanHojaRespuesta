@@ -663,6 +663,8 @@ namespace ContrlAcademico
                 return;
             }
 
+            var evaluacionSeleccionada = (EvaluacionProgramadaSummaryDto)cmbEvaluaciones.SelectedItem;
+
             if (string.IsNullOrWhiteSpace(_authToken))
             {
                 MessageBox.Show(
@@ -699,6 +701,56 @@ namespace ContrlAcademico
                     "Sin datos para registrar",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
+                return;
+            }
+
+            try
+            {
+                bool existenRespuestas = await _evaluacionRespuestaService
+                    .ExistenRespuestasParaEvaluacionProgramadaAsync(
+                        _config.ApiEndpoint,
+                        _authToken!,
+                        evaluacionSeleccionada.Id)
+                    .ConfigureAwait(true);
+
+                if (existenRespuestas)
+                {
+                    var confirmResult = MessageBox.Show(
+                        "Ya existen respuestas registradas para la evaluación seleccionada. Si continúa se eliminarán los datos existentes y se registrarán los nuevos resultados procesados. ¿Desea continuar?",
+                        "Confirmar reemplazo",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning,
+                        MessageBoxDefaultButton.Button2);
+
+                    if (confirmResult != DialogResult.Yes)
+                    {
+                        return;
+                    }
+
+                    await _evaluacionRespuestaService
+                        .EliminarRespuestasParaEvaluacionProgramadaAsync(
+                            _config.ApiEndpoint,
+                            _authToken!,
+                            evaluacionSeleccionada.Id)
+                        .ConfigureAwait(true);
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                MessageBox.Show(
+                    $"Error de conexión al validar o eliminar respuestas previas: {ex.Message}",
+                    "Error de red",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Ocurrió un error al validar o eliminar respuestas previas: {ex.Message}",
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 return;
             }
 
