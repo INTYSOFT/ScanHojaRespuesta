@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -64,6 +65,69 @@ public sealed class EvaluacionRespuestaService
 
             response.EnsureSuccessStatusCode();
         }
+    }
+
+    public async Task<bool> ExistenRespuestasParaEvaluacionProgramadaAsync(
+        string baseUrl,
+        string token,
+        int evaluacionProgramadaId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(baseUrl))
+        {
+            throw new InvalidOperationException("La URL base del servicio no está configurada.");
+        }
+
+        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var baseUri))
+        {
+            throw new InvalidOperationException("La URL base del servicio es inválida.");
+        }
+
+        PrepareClient(baseUri, token);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"api/EvaluacionRespuestums/ByEvaluacionProgramada/{evaluacionProgramadaId}");
+        using var response = await _httpClient
+            .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return false;
+        }
+
+        response.EnsureSuccessStatusCode();
+        return true;
+    }
+
+    public async Task<bool> EliminarRespuestasParaEvaluacionProgramadaAsync(
+        string baseUrl,
+        string token,
+        int evaluacionProgramadaId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(baseUrl))
+        {
+            throw new InvalidOperationException("La URL base del servicio no está configurada.");
+        }
+
+        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var baseUri))
+        {
+            throw new InvalidOperationException("La URL base del servicio es inválida.");
+        }
+
+        PrepareClient(baseUri, token);
+
+        using var response = await _httpClient
+            .DeleteAsync($"api/EvaluacionRespuestums/ByEvaluacionProgramada/{evaluacionProgramadaId}", cancellationToken)
+            .ConfigureAwait(false);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return false;
+        }
+
+        response.EnsureSuccessStatusCode();
+        return true;
     }
 
     private void PrepareClient(Uri baseUri, string token)
