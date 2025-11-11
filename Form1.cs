@@ -50,14 +50,16 @@ namespace ContrlAcademico
 
         private sealed class SectionItem
         {
-            public SectionItem(string display, string? value)
+            public SectionItem(string display, string? value, int? seccionId)
             {
                 Display = display;
                 Value = value;
+                SeccionId = seccionId;
             }
 
             public string Display { get; }
             public string? Value { get; }
+            public int? SeccionId { get; }
 
             public override string ToString() => Display;
         }
@@ -358,10 +360,26 @@ namespace ContrlAcademico
                 cmbSecciones.DataSource = null;
                 cmbSecciones.Items.Clear();
 
-                var sections = participantes
-                    .Select(p => NormalizeSection(p.Seccion))
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .Select(section => new SectionItem(section ?? "Sin sección", section))
+                var sectionsMap = new Dictionary<string, SectionItem>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var participante in participantes)
+                {
+                    var normalizedSection = NormalizeSection(participante.Seccion);
+                    var displayName = string.IsNullOrWhiteSpace(participante.Seccion)
+                        ? "Sin sección"
+                        : participante.Seccion.Trim();
+
+                    var key = participante.SeccionId.HasValue
+                        ? $"ID:{participante.SeccionId.Value}"
+                        : $"NAME:{normalizedSection ?? string.Empty}";
+
+                    if (!sectionsMap.ContainsKey(key))
+                    {
+                        sectionsMap[key] = new SectionItem(displayName, normalizedSection, participante.SeccionId);
+                    }
+                }
+
+                var sections = sectionsMap.Values
                     .OrderBy(item => item.Display, StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
@@ -427,6 +445,11 @@ namespace ContrlAcademico
 
         private static bool SectionMatches(EvaluacionProgramadaConsultaDto participante, SectionItem selectedSection)
         {
+            if (selectedSection.SeccionId.HasValue)
+            {
+                return participante.SeccionId == selectedSection.SeccionId;
+            }
+
             var participanteSeccion = NormalizeSection(participante.Seccion);
 
             if (selectedSection.Value is null)
@@ -434,7 +457,8 @@ namespace ContrlAcademico
                 return participanteSeccion is null;
             }
 
-            return string.Equals(participanteSeccion, selectedSection.Value, StringComparison.OrdinalIgnoreCase);
+            return participanteSeccion is not null &&
+                   string.Equals(participanteSeccion, selectedSection.Value, StringComparison.OrdinalIgnoreCase);
         }
 
         private void ClearScanResults()
@@ -620,6 +644,7 @@ namespace ContrlAcademico
                     {
                         EvaluacionId = participante.EvaluacionId,
                         EvaluacionProgramadaId = participante.EvaluacionProgramadaId,
+                        SeccionId = participante.SeccionId,
                         Version = 1,
                         PreguntaOrden = i + 1,
                         Respuesta = answer == '-' ? null : answer.ToString(),

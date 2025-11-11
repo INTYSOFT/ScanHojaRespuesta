@@ -148,11 +148,20 @@ public sealed class EvaluacionProgramadaConsultaDto
     [JsonPropertyName("evaluacionProgramadaId")]
     public int EvaluacionProgramadaId { get; init; }
 
+    [JsonPropertyName("sedeId")]
+    public int? SedeId { get; init; }
+
     [JsonPropertyName("sede")]
     public string? Sede { get; init; }
 
+    [JsonPropertyName("cicloId")]
+    public int? CicloId { get; init; }
+
     [JsonPropertyName("ciclo")]
     public string? Ciclo { get; init; }
+
+    [JsonPropertyName("seccionId")]
+    public int? SeccionId { get; init; }
 
     [JsonPropertyName("seccion")]
     public string? Seccion { get; init; }
