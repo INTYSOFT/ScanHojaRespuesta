@@ -2,16 +2,18 @@
 using Newtonsoft.Json;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
-using System.Net.Http;
+using System.Drawing;
 using System.Linq;
+using System.Net.Http;
+using System.Text;
 
 namespace ContrlAcademico
 {
     public partial class Form1 : Form
     {
         // Para almacenar resultados por página
-        private List<string> _pageDnis;
-        private List<char[]> _pageAnswers;
+        private List<string> _pageDnis = new();
+        private List<char[]> _pageAnswers = new();
 
 
         private ConfigModel _config;
@@ -39,6 +41,7 @@ namespace ContrlAcademico
 
         private readonly string? _authToken;
         private readonly EvaluacionProgramadaService _evaluacionService = new();
+        private readonly EvaluacionRespuestaService _evaluacionRespuestaService = new();
         private List<EvaluacionProgramadaSummaryDto> _evaluacionesProgramadas = new();
         private List<EvaluacionProgramadaConsultaDto> _evaluacionParticipantes = new();
         private readonly Dictionary<string, int> _dniToScanIndex = new(StringComparer.OrdinalIgnoreCase);
@@ -297,6 +300,56 @@ namespace ContrlAcademico
             dgvHead.ClearSelection();
         }
 
+        private bool ValidateHeadGridRows(out List<DataGridViewRow> invalidRows)
+        {
+            invalidRows = new List<DataGridViewRow>();
+
+            var defaultBackColor = dgvHead.DefaultCellStyle.BackColor;
+            var defaultForeColor = dgvHead.DefaultCellStyle.ForeColor;
+            var defaultSelectionBackColor = dgvHead.DefaultCellStyle.SelectionBackColor;
+            var defaultSelectionForeColor = dgvHead.DefaultCellStyle.SelectionForeColor;
+
+            foreach (DataGridViewRow row in dgvHead.Rows)
+            {
+                if (row.IsNewRow)
+                {
+                    continue;
+                }
+
+                bool hasPage = HasRequiredValue(row, "colPage");
+                bool hasDni = HasRequiredValue(row, "colDNI");
+                bool hasName = HasRequiredValue(row, "colName");
+
+                if (hasPage && hasDni && hasName)
+                {
+                    ApplyRowValidationStyle(row, defaultBackColor, defaultForeColor, defaultSelectionBackColor, defaultSelectionForeColor);
+                }
+                else
+                {
+                    ApplyRowValidationStyle(row, Color.MistyRose, Color.Black, Color.IndianRed, Color.White);
+                    invalidRows.Add(row);
+                }
+            }
+
+            return invalidRows.Count == 0;
+        }
+
+        private static bool HasRequiredValue(DataGridViewRow row, string columnName)
+            => !string.IsNullOrWhiteSpace(Convert.ToString(row.Cells[columnName].Value));
+
+        private static void ApplyRowValidationStyle(
+            DataGridViewRow row,
+            Color backColor,
+            Color foreColor,
+            Color selectionBackColor,
+            Color selectionForeColor)
+        {
+            row.DefaultCellStyle.BackColor = backColor;
+            row.DefaultCellStyle.ForeColor = foreColor;
+            row.DefaultCellStyle.SelectionBackColor = selectionBackColor;
+            row.DefaultCellStyle.SelectionForeColor = selectionForeColor;
+        }
+
         private void PopulateSecciones(IEnumerable<EvaluacionProgramadaConsultaDto> participantes)
         {
             _isPopulatingSecciones = true;
@@ -481,6 +534,226 @@ namespace ContrlAcademico
             if (!string.IsNullOrWhiteSpace(dni))
             {
                 _dniToScanIndex[dni] = scanIndex;
+            }
+        }
+
+        private bool TryGetScanIndexForRow(DataGridViewRow row, out int scanIndex)
+        {
+            if (row.Tag is int tagIndex && tagIndex >= 0 && tagIndex < _pageAnswers.Count)
+            {
+                scanIndex = tagIndex;
+                return true;
+            }
+
+            var dni = Convert.ToString(row.Cells["colDNI"].Value)?.Trim();
+            if (!string.IsNullOrWhiteSpace(dni) &&
+                _dniToScanIndex.TryGetValue(dni, out var mappedIndex) &&
+                mappedIndex >= 0 && mappedIndex < _pageAnswers.Count)
+            {
+                scanIndex = mappedIndex;
+                return true;
+            }
+
+            scanIndex = -1;
+            return false;
+        }
+
+        private List<EvaluacionRespuestaCreateDto> BuildResponses(out List<string> warnings)
+        {
+            warnings = new List<string>();
+            var result = new List<EvaluacionRespuestaCreateDto>();
+
+            if (_pageAnswers.Count == 0)
+            {
+                warnings.Add("No hay respuestas escaneadas para registrar.");
+                return result;
+            }
+
+            var now = DateTime.UtcNow;
+
+            foreach (DataGridViewRow row in dgvHead.Rows)
+            {
+                if (row.IsNewRow)
+                {
+                    continue;
+                }
+
+                var dni = Convert.ToString(row.Cells["colDNI"].Value)?.Trim();
+                if (string.IsNullOrWhiteSpace(dni))
+                {
+                    continue;
+                }
+
+                if (!TryGetScanIndexForRow(row, out var scanIndex))
+                {
+                    warnings.Add($"No se encontraron respuestas escaneadas para el DNI {dni}.");
+                    continue;
+                }
+
+                if (scanIndex < 0 || scanIndex >= _pageAnswers.Count)
+                {
+                    warnings.Add($"El índice de página asociado al DNI {dni} es inválido.");
+                    continue;
+                }
+
+                var answers = _pageAnswers[scanIndex];
+                if (answers is null || answers.Length == 0)
+                {
+                    warnings.Add($"La página asociada al DNI {dni} no contiene respuestas.");
+                    continue;
+                }
+
+                var participante = _evaluacionParticipantes
+                    .FirstOrDefault(p => string.Equals(p.AlumnoDni, dni, StringComparison.OrdinalIgnoreCase));
+
+                if (participante is null)
+                {
+                    warnings.Add($"El DNI {dni} no pertenece a la evaluación seleccionada.");
+                    continue;
+                }
+
+                for (int i = 0; i < answers.Length; i++)
+                {
+                    var answer = answers[i];
+
+                    result.Add(new EvaluacionRespuestaCreateDto
+                    {
+                        EvaluacionId = participante.EvaluacionId,
+                        EvaluacionProgramadaId = participante.EvaluacionProgramadaId,
+                        Version = 1,
+                        PreguntaOrden = i + 1,
+                        Respuesta = answer == '-' ? null : answer.ToString(),
+                        Fuente = "ScanHojaRespuesta",
+                        Activo = true,
+                        FechaRegistro = now,
+                        DniAlumno = dni
+                    });
+                }
+            }
+
+            return result;
+        }
+
+        private async void btnRegistrarDatos_Click(object sender, EventArgs e)
+        {
+            if (!ValidateHeadGridRows(out var invalidRows))
+            {
+                if (invalidRows.Count > 0)
+                {
+                    dgvHead.ClearSelection();
+                    invalidRows[0].Selected = true;
+                    dgvHead.FirstDisplayedScrollingRowIndex = Math.Max(0, invalidRows[0].Index);
+                }
+
+                MessageBox.Show(
+                    "Complete los campos Página, DNI y Nombre antes de registrar los datos.",
+                    "Validación requerida",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (cmbEvaluaciones.SelectedItem is not EvaluacionProgramadaSummaryDto)
+            {
+                MessageBox.Show(
+                    "Seleccione una evaluación programada antes de registrar los datos.",
+                    "Evaluación requerida",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_authToken))
+            {
+                MessageBox.Show(
+                    "No se encontró el token de autenticación. Inicie sesión nuevamente.",
+                    "Autenticación requerida",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (_config is null || string.IsNullOrWhiteSpace(_config.ApiEndpoint))
+            {
+                MessageBox.Show(
+                    "La configuración del servicio no es válida. Verifique el archivo config.json.",
+                    "Configuración incompleta",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return;
+            }
+
+            var responses = BuildResponses(out var warnings);
+            var warningMessages = warnings
+                .Where(w => !string.IsNullOrWhiteSpace(w))
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+            if (responses.Count == 0)
+            {
+                var message = warningMessages.Count > 0
+                    ? string.Join(Environment.NewLine, warningMessages)
+                    : "No se encontraron respuestas válidas para registrar.";
+
+                MessageBox.Show(
+                    message,
+                    "Sin datos para registrar",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            btnRegistrarDatos.Enabled = false;
+
+            try
+            {
+                await _evaluacionRespuestaService
+                    .RegistrarRespuestasAsync(_config.ApiEndpoint, _authToken, responses)
+                    .ConfigureAwait(true);
+
+                var alumnosRegistrados = responses
+                    .Select(r => r.DniAlumno)
+                    .Where(dni => !string.IsNullOrWhiteSpace(dni))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Count();
+
+                var builder = new StringBuilder();
+                builder.AppendLine($"Se registraron las respuestas de {alumnosRegistrados} alumno(s).");
+
+                if (warningMessages.Count > 0)
+                {
+                    builder.AppendLine();
+                    builder.AppendLine("Advertencias:");
+                    foreach (var warning in warningMessages)
+                    {
+                        builder.AppendLine(warning);
+                    }
+                }
+
+                MessageBox.Show(
+                    builder.ToString(),
+                    "Registro completado",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            catch (HttpRequestException ex)
+            {
+                MessageBox.Show(
+                    $"Error de conexión al registrar las respuestas: {ex.Message}",
+                    "Error de red",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Ocurrió un error al registrar las respuestas: {ex.Message}",
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            finally
+            {
+                btnRegistrarDatos.Enabled = true;
             }
         }
 
