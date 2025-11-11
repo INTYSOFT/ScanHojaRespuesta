@@ -4,6 +4,7 @@ using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using System.Net.Http;
 using System.Linq;
+using System.IO;
 
 namespace ContrlAcademico
 {
@@ -36,6 +37,9 @@ namespace ContrlAcademico
 
         private bool _calibrated = false;
         private readonly string _configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.json");
+
+        private bool depurar_imagen = true;
+        private const string DepurarImagenDirectorio = @"d:\\depurar";
 
         private readonly string? _authToken;
         private readonly EvaluacionProgramadaService _evaluacionService = new();
@@ -172,6 +176,73 @@ namespace ContrlAcademico
             _calibrated = true;
 
             //logs.AppendText($"Calibrado: StartY={g.StartY}, Dy={g.Dy}\n");
+        }
+
+        private void GuardarImagenDepuracion(Mat sourceMat, char[] answers, int pageIndex)
+        {
+            if (!depurar_imagen)
+            {
+                return;
+            }
+
+            try
+            {
+                Directory.CreateDirectory(DepurarImagenDirectorio);
+
+                using var debugClone = sourceMat.Clone();
+
+                var grid = _config.AnswersGrid;
+                int rows = grid.Rows;
+                int cols = grid.Cols;
+                int blocks = grid.BlockCount;
+                int spacing = grid.BlockSpacing;
+
+                for (int b = 0; b < blocks; b++)
+                {
+                    int baseX = grid.StartX + b * (cols * grid.Dx + spacing);
+
+                    for (int r = 0; r < rows; r++)
+                    {
+                        int idx = b * rows + r;
+                        if (idx >= answers.Length)
+                        {
+                            continue;
+                        }
+
+                        char answer = answers[idx];
+                        if (answer < 'A' || answer >= 'A' + cols)
+                        {
+                            continue;
+                        }
+
+                        int option = answer - 'A';
+                        int bubbleX = baseX + option * grid.Dx;
+                        int bubbleY = grid.StartY + r * grid.Dy;
+
+                        int centerX = Math.Clamp(bubbleX + grid.BubbleW / 2, 0, debugClone.Width - 1);
+                        int centerY = Math.Clamp(bubbleY + grid.BubbleH / 2, 0, debugClone.Height - 1);
+                        int axisX = Math.Max(1, Math.Min(grid.BubbleW / 2, debugClone.Width / 2));
+                        int axisY = Math.Max(1, Math.Min(grid.BubbleH / 2, debugClone.Height / 2));
+
+                        if (axisX <= 0 || axisY <= 0)
+                        {
+                            continue;
+                        }
+
+                        var center = new OpenCvSharp.Point(centerX, centerY);
+                        var axes = new OpenCvSharp.Size(axisX, axisY);
+
+                        Cv2.Ellipse(debugClone, center, axes, 0, 0, 360, new Scalar(0, 255, 0), 2);
+                    }
+                }
+
+                string fileName = Path.Combine(DepurarImagenDirectorio, $"pagina_{pageIndex + 1:000}.png");
+                Cv2.ImWrite(fileName, debugClone);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"No se pudo guardar la imagen de depuración: {ex.Message}");
+            }
         }
 
         private async void Form1_Load(object sender, EventArgs e)
@@ -686,9 +757,11 @@ namespace ContrlAcademico
 
                     using var warpedMat = BitmapConverter.ToMat(warped);
 
-                    Mat debugMat = warpedMat.Clone();
-                    pbWarped.Image?.Dispose();
-                    pbWarped.Image = BitmapConverter.ToBitmap(debugMat);
+                    using (var debugMat = warpedMat.Clone())
+                    {
+                        pbWarped.Image?.Dispose();
+                        pbWarped.Image = BitmapConverter.ToBitmap(debugMat);
+                    }
                     Application.DoEvents();
                     await Task.Delay(200);
 
@@ -702,6 +775,7 @@ namespace ContrlAcademico
                     }
 
                     var answers = _omrProcessor.Process(warped);
+                    GuardarImagenDepuracion(warpedMat, answers, i);
                     warped.Dispose();
 
                     _pageDnis.Add(dni);
@@ -888,7 +962,9 @@ namespace ContrlAcademico
 
             // 3) Procesar OMR de respuestas sobre la página completa
             //    (si en realidad lo querías sobre el warped, pásale fullPage)
+            int pageIndex = _answersPages?.Count ?? 0;
             var answers = _omrProcessor.Process(fullPage);
+            GuardarImagenDepuracion(debugMat, answers, pageIndex);
             _answersPages.Add(answers);
 
             // 4) Extraer el DNI con tu extractor (que aplica OMR 8×10 sobre la región)
