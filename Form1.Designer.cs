@@ -36,6 +36,7 @@
             pbThresh = new PictureBox();
             btnPrev = new Button();
             btnNext = new Button();
+            btnRegistrarDatos = new Button();
             lblPageInfo = new Label();
             pbDni = new PictureBox();
             tbPage = new TextBox();
@@ -85,7 +86,7 @@
             progressBar.Name = "progressBar";
             progressBar.Size = new Size(584, 34);
             progressBar.TabIndex = 6;
-            // 
+            //
             // pbWarped
             // 
             pbWarped.Location = new Point(629, 7);
@@ -124,9 +125,19 @@
             btnNext.Text = "Siguiente";
             btnNext.UseVisualStyleBackColor = true;
             btnNext.Click += btnNext_Click;
-            // 
+            //
+            // btnRegistrarDatos
+            //
+            btnRegistrarDatos.Location = new Point(629, 305);
+            btnRegistrarDatos.Name = "btnRegistrarDatos";
+            btnRegistrarDatos.Size = new Size(188, 34);
+            btnRegistrarDatos.TabIndex = 23;
+            btnRegistrarDatos.Text = "Registrar datos";
+            btnRegistrarDatos.UseVisualStyleBackColor = true;
+            btnRegistrarDatos.Click += btnRegistrarDatos_Click;
+            //
             // lblPageInfo
-            // 
+            //
             lblPageInfo.AutoSize = true;
             lblPageInfo.Location = new Point(15, 183);
             lblPageInfo.Name = "lblPageInfo";
@@ -214,6 +225,7 @@
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1210, 969);
+            Controls.Add(btnRegistrarDatos);
             Controls.Add(cmbSecciones);
             Controls.Add(lblSeccion);
             Controls.Add(lblEvaluacion);
@@ -262,5 +274,6 @@
         private Label lblEvaluacion;
         private Label lblSeccion;
         private ComboBox cmbSecciones;
+        private Button btnRegistrarDatos;
     }
 }
