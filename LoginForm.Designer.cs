@@ -28,66 +28,73 @@ namespace ContrlAcademico
         /// </summary>
         private void InitializeComponent()
         {
-            lblTitle = new System.Windows.Forms.Label();
-            txtUsername = new System.Windows.Forms.TextBox();
-            txtPassword = new System.Windows.Forms.TextBox();
-            lblUsername = new System.Windows.Forms.Label();
-            lblPassword = new System.Windows.Forms.Label();
-            btnLogin = new System.Windows.Forms.Button();
-            lblStatus = new System.Windows.Forms.Label();
+            lblTitle = new Label();
+            txtUsername = new TextBox();
+            txtPassword = new TextBox();
+            lblUsername = new Label();
+            lblPassword = new Label();
+            btnLogin = new Button();
+            lblStatus = new Label();
             SuspendLayout();
             // 
             // lblTitle
             // 
             lblTitle.AutoSize = true;
-            lblTitle.Font = new System.Drawing.Font("Segoe UI", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            lblTitle.Location = new System.Drawing.Point(24, 18);
+            lblTitle.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+            lblTitle.Location = new Point(60, 43);
+            lblTitle.Margin = new Padding(4, 0, 4, 0);
             lblTitle.Name = "lblTitle";
-            lblTitle.Size = new System.Drawing.Size(182, 25);
+            lblTitle.Size = new Size(222, 38);
             lblTitle.TabIndex = 0;
             lblTitle.Text = "Inicio de Sesión";
             // 
             // txtUsername
             // 
-            txtUsername.Location = new System.Drawing.Point(24, 87);
+            txtUsername.Location = new Point(60, 158);
+            txtUsername.Margin = new Padding(4, 5, 4, 5);
             txtUsername.Name = "txtUsername";
             txtUsername.PlaceholderText = "Usuario";
-            txtUsername.Size = new System.Drawing.Size(280, 23);
+            txtUsername.Size = new Size(398, 31);
             txtUsername.TabIndex = 1;
             // 
             // txtPassword
             // 
-            txtPassword.Location = new System.Drawing.Point(24, 146);
+            txtPassword.Location = new Point(60, 256);
+            txtPassword.Margin = new Padding(4, 5, 4, 5);
             txtPassword.Name = "txtPassword";
             txtPassword.PasswordChar = '•';
             txtPassword.PlaceholderText = "Contraseña";
-            txtPassword.Size = new System.Drawing.Size(280, 23);
+            txtPassword.Size = new Size(398, 31);
             txtPassword.TabIndex = 3;
             txtPassword.UseSystemPasswordChar = true;
             // 
             // lblUsername
             // 
             lblUsername.AutoSize = true;
-            lblUsername.Location = new System.Drawing.Point(24, 69);
+            lblUsername.ForeColor = Color.Black;
+            lblUsername.Location = new Point(60, 128);
+            lblUsername.Margin = new Padding(4, 0, 4, 0);
             lblUsername.Name = "lblUsername";
-            lblUsername.Size = new System.Drawing.Size(50, 15);
+            lblUsername.Size = new Size(72, 25);
             lblUsername.TabIndex = 2;
             lblUsername.Text = "Usuario";
             // 
             // lblPassword
             // 
             lblPassword.AutoSize = true;
-            lblPassword.Location = new System.Drawing.Point(24, 128);
+            lblPassword.Location = new Point(60, 226);
+            lblPassword.Margin = new Padding(4, 0, 4, 0);
             lblPassword.Name = "lblPassword";
-            lblPassword.Size = new System.Drawing.Size(67, 15);
+            lblPassword.Size = new Size(101, 25);
             lblPassword.TabIndex = 4;
             lblPassword.Text = "Contraseña";
             // 
             // btnLogin
             // 
-            btnLogin.Location = new System.Drawing.Point(24, 188);
+            btnLogin.Location = new Point(60, 326);
+            btnLogin.Margin = new Padding(4, 5, 4, 5);
             btnLogin.Name = "btnLogin";
-            btnLogin.Size = new System.Drawing.Size(280, 32);
+            btnLogin.Size = new Size(400, 53);
             btnLogin.TabIndex = 5;
             btnLogin.Text = "Ingresar";
             btnLogin.UseVisualStyleBackColor = true;
@@ -96,18 +103,19 @@ namespace ContrlAcademico
             // lblStatus
             // 
             lblStatus.AutoSize = true;
-            lblStatus.ForeColor = System.Drawing.Color.FromArgb(192, 0, 0);
-            lblStatus.Location = new System.Drawing.Point(24, 235);
+            lblStatus.ForeColor = Color.FromArgb(192, 0, 0);
+            lblStatus.Location = new Point(60, 405);
+            lblStatus.Margin = new Padding(4, 0, 4, 0);
             lblStatus.Name = "lblStatus";
-            lblStatus.Size = new System.Drawing.Size(0, 15);
+            lblStatus.Size = new Size(0, 25);
             lblStatus.TabIndex = 6;
             // 
             // LoginForm
             // 
             AcceptButton = btnLogin;
-            AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(334, 281);
+            AutoScaleDimensions = new SizeF(10F, 25F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(518, 469);
             Controls.Add(lblStatus);
             Controls.Add(btnLogin);
             Controls.Add(lblPassword);
@@ -115,11 +123,12 @@ namespace ContrlAcademico
             Controls.Add(txtPassword);
             Controls.Add(txtUsername);
             Controls.Add(lblTitle);
-            FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            Margin = new Padding(4, 5, 4, 5);
             MaximizeBox = false;
             MinimizeBox = false;
             Name = "LoginForm";
-            StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            StartPosition = FormStartPosition.CenterScreen;
             Text = "Autenticación";
             ResumeLayout(false);
             PerformLayout();
