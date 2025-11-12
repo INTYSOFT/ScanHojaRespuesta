@@ -48,6 +48,18 @@ namespace ContrlAcademico
         private bool _suppressPageTextChange;
         private bool _isPopulatingSecciones;
 
+        private sealed class ScanMetadata
+        {
+            public ScanMetadata(int scanIndex, DateTime processedOn)
+            {
+                ScanIndex = scanIndex;
+                ProcessedOn = processedOn;
+            }
+
+            public int ScanIndex { get; }
+            public DateTime ProcessedOn { get; }
+        }
+
         private sealed class SectionItem
         {
             public SectionItem(string display, string? value, int? seccionId)
@@ -97,12 +109,16 @@ namespace ContrlAcademico
             // 3) Monta los grids
             SetupHeadGrid();
             SetupDetailGrid();
+            SetupMissingGrid();
 
             // 4) Eventos
             dgvHead.SelectionChanged += dgvHead_SelectionChanged;
 
             // añade esto:
             dgvHead.CellClick        += dgvHead_CellClick;
+            dataGV__noencontradas.SelectionChanged += dataGV__noencontradas_SelectionChanged;
+            dataGV__noencontradas.CellClick        += dataGV__noencontradas_CellClick;
+            dataGV__noencontradas.CellEndEdit      += dataGV__noencontradas_CellEndEdit;
 
         }
 
@@ -114,8 +130,22 @@ namespace ContrlAcademico
             // 1) Seleccionamos la fila entera
             dgvHead.ClearSelection();
             dgvHead.Rows[e.RowIndex].Selected = true;
+            dataGV__noencontradas.ClearSelection();
 
             MostrarDetalleDesdeFila(e.RowIndex);
+        }
+
+        private void dataGV__noencontradas_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0)
+            {
+                return;
+            }
+
+            dataGV__noencontradas.ClearSelection();
+            dataGV__noencontradas.Rows[e.RowIndex].Selected = true;
+            dgvHead.ClearSelection();
+            MostrarDetalleDesdeRow(dataGV__noencontradas.Rows[e.RowIndex]);
         }
 
         private void FillDetailFromScanIndex(int scanIndex)
@@ -482,6 +512,9 @@ namespace ContrlAcademico
             progressBar.Value = 0;
             progressBar.Maximum = 0;
 
+            dataGV__noencontradas.Rows.Clear();
+            dataGV__noencontradas.ClearSelection();
+
             foreach (DataGridViewRow row in dgvHead.Rows)
             {
                 row.Cells["colPage"].Value = string.Empty;
@@ -532,30 +565,30 @@ namespace ContrlAcademico
             dni ??= string.Empty;
             dni = dni.Trim();
 
-            int rowIndex = FindRowIndexByDni(dni);
+            RemoveMissingRowByScanIndex(scanIndex);
 
-            if (rowIndex >= 0)
+            if (!string.IsNullOrWhiteSpace(dni))
+            {
+                RemoveMissingRowByDni(dni);
+            }
+
+            int rowIndex = FindRowIndexByDni(dni);
+            bool foundInHead = rowIndex >= 0;
+
+            if (foundInHead)
             {
                 var row = dgvHead.Rows[rowIndex];
                 row.Cells["colPage"].Value = (scanIndex + 1).ToString("000");
                 row.Cells["colFecha"].Value = fechaProcesamiento.ToShortDateString();
                 row.Cells["colDNI"].Value = dni;
-                row.Tag = scanIndex;
+                row.Tag = new ScanMetadata(scanIndex, fechaProcesamiento);
             }
             else
             {
-                rowIndex = dgvHead.Rows.Add(
-                    (scanIndex + 1).ToString("000"),
-                    dni,
-                    string.Empty,
-                    fechaProcesamiento.ToShortDateString(),
-                    string.Empty,
-                    string.Empty);
-
-                dgvHead.Rows[rowIndex].Tag = scanIndex;
+                AddMissingScanEntry(dni, scanIndex, fechaProcesamiento);
             }
 
-            if (!string.IsNullOrWhiteSpace(dni))
+            if (foundInHead && !string.IsNullOrWhiteSpace(dni))
             {
                 _dniToScanIndex[dni] = scanIndex;
             }
@@ -563,9 +596,10 @@ namespace ContrlAcademico
 
         private bool TryGetScanIndexForRow(DataGridViewRow row, out int scanIndex)
         {
-            if (row.Tag is int tagIndex && tagIndex >= 0 && tagIndex < _pageAnswers.Count)
+            var metadata = GetScanMetadata(row.Tag);
+            if (metadata is not null && metadata.ScanIndex >= 0 && metadata.ScanIndex < _pageAnswers.Count)
             {
-                scanIndex = tagIndex;
+                scanIndex = metadata.ScanIndex;
                 return true;
             }
 
@@ -869,27 +903,7 @@ namespace ContrlAcademico
                 return;
             }
 
-            var row = dgvHead.Rows[rowIndex];
-
-            int scanIndex = -1;
-            if (row.Tag is int tagIndex)
-            {
-                scanIndex = tagIndex;
-            }
-            else if (row.Cells["colDNI"].Value is string dni && _dniToScanIndex.TryGetValue(dni, out var mappedIndex))
-            {
-                scanIndex = mappedIndex;
-            }
-
-            if (scanIndex >= 0)
-            {
-                ShowScanResult(scanIndex);
-            }
-            else
-            {
-                dgvDetalle.Rows.Clear();
-                lblPageInfo.Text = "Sin resultados de escaneo";
-            }
+            MostrarDetalleDesdeRow(dgvHead.Rows[rowIndex]);
         }
         //evento resize de form1
 
@@ -949,6 +963,142 @@ namespace ContrlAcademico
             dgvDetalle.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
             dgvDetalle.AllowUserToAddRows    = false;
             dgvDetalle.AllowUserToDeleteRows = false;
+        }
+
+        private void SetupMissingGrid()
+        {
+            dataGV__noencontradas.Columns.Clear();
+            dataGV__noencontradas.Columns.Add("colMissingPage", "Página");
+            dataGV__noencontradas.Columns.Add("colMissingDni", "DNI");
+            dataGV__noencontradas.Columns.Add("colMissingFecha", "Fecha");
+
+            dataGV__noencontradas.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+            dataGV__noencontradas.AllowUserToAddRows    = false;
+            dataGV__noencontradas.AllowUserToDeleteRows = false;
+            dataGV__noencontradas.SelectionMode         = DataGridViewSelectionMode.FullRowSelect;
+            dataGV__noencontradas.MultiSelect           = false;
+
+            if (dataGV__noencontradas.Columns["colMissingPage"] is not null)
+            {
+                dataGV__noencontradas.Columns["colMissingPage"].ReadOnly = true;
+            }
+
+            if (dataGV__noencontradas.Columns["colMissingFecha"] is not null)
+            {
+                dataGV__noencontradas.Columns["colMissingFecha"].ReadOnly = true;
+            }
+        }
+
+        private void AddMissingScanEntry(string dni, int scanIndex, DateTime fechaProcesamiento)
+        {
+            var rowIndex = dataGV__noencontradas.Rows.Add(
+                (scanIndex + 1).ToString("000"),
+                dni ?? string.Empty,
+                fechaProcesamiento.ToShortDateString());
+
+            dataGV__noencontradas.Rows[rowIndex].Tag = new ScanMetadata(scanIndex, fechaProcesamiento);
+        }
+
+        private void RemoveMissingRowByScanIndex(int scanIndex)
+        {
+            for (int i = dataGV__noencontradas.Rows.Count - 1; i >= 0; i--)
+            {
+                var metadata = GetScanMetadata(dataGV__noencontradas.Rows[i].Tag);
+                if (metadata is not null && metadata.ScanIndex == scanIndex)
+                {
+                    dataGV__noencontradas.Rows.RemoveAt(i);
+                }
+            }
+        }
+
+        private void RemoveMissingRowByDni(string dni)
+        {
+            if (string.IsNullOrWhiteSpace(dni))
+            {
+                return;
+            }
+
+            for (int i = dataGV__noencontradas.Rows.Count - 1; i >= 0; i--)
+            {
+                var value = Convert.ToString(dataGV__noencontradas.Rows[i].Cells["colMissingDni"].Value)?.Trim();
+                if (string.Equals(value, dni, StringComparison.OrdinalIgnoreCase))
+                {
+                    dataGV__noencontradas.Rows.RemoveAt(i);
+                }
+            }
+        }
+
+        private static ScanMetadata? GetScanMetadata(object? tag)
+            => tag switch
+            {
+                ScanMetadata metadata => metadata,
+                int legacyIndex => new ScanMetadata(legacyIndex, DateTime.MinValue),
+                _ => null
+            };
+
+        private string? GetDniFromRow(DataGridViewRow row)
+        {
+            var dataGridView = row.DataGridView;
+            if (dataGridView is null)
+            {
+                return null;
+            }
+
+            if (dataGridView.Columns["colDNI"] is not null)
+            {
+                return Convert.ToString(row.Cells["colDNI"].Value)?.Trim();
+            }
+
+            if (dataGridView.Columns["colMissingDni"] is not null)
+            {
+                return Convert.ToString(row.Cells["colMissingDni"].Value)?.Trim();
+            }
+
+            return null;
+        }
+
+        private void MostrarDetalleDesdeRow(DataGridViewRow? row)
+        {
+            if (row is null)
+            {
+                return;
+            }
+
+            var metadata = GetScanMetadata(row.Tag);
+            int scanIndex = metadata?.ScanIndex ?? -1;
+
+            if (scanIndex < 0)
+            {
+                var dni = GetDniFromRow(row);
+                if (!string.IsNullOrWhiteSpace(dni) && _dniToScanIndex.TryGetValue(dni, out var mappedIndex))
+                {
+                    scanIndex = mappedIndex;
+                }
+            }
+
+            if (scanIndex < 0)
+            {
+                var dataGridView = row.DataGridView;
+                if (dataGridView?.Columns["colPage"] is not null &&
+                    row.Cells["colPage"].Value is string pageText &&
+                    int.TryParse(pageText, out var pageIndex))
+                {
+                    scanIndex = pageIndex - 1;
+                }
+                else if (dataGridView?.Columns["colMissingPage"] is not null &&
+                         row.Cells["colMissingPage"].Value is string missingPageText &&
+                         int.TryParse(missingPageText, out var missingPageIndex))
+                {
+                    scanIndex = missingPageIndex - 1;
+                }
+            }
+
+            if (scanIndex < 0)
+            {
+                return;
+            }
+
+            ShowScanResult(scanIndex);
         }
 
         private void btnLoadConfig_Click(object sender, EventArgs e)
@@ -1106,7 +1256,63 @@ namespace ContrlAcademico
         {
             if (dgvHead.SelectedRows.Count == 0) return;
             int idx = dgvHead.SelectedRows[0].Index;
+            dataGV__noencontradas.ClearSelection();
             MostrarDetalleDesdeFila(idx);
+        }
+
+        private void dataGV__noencontradas_SelectionChanged(object sender, EventArgs e)
+        {
+            if (dataGV__noencontradas.SelectedRows.Count == 0)
+            {
+                return;
+            }
+
+            dgvHead.ClearSelection();
+            MostrarDetalleDesdeRow(dataGV__noencontradas.SelectedRows[0]);
+        }
+
+        private void dataGV__noencontradas_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0)
+            {
+                return;
+            }
+
+            if (dataGV__noencontradas.Columns[e.ColumnIndex].Name != "colMissingDni")
+            {
+                return;
+            }
+
+            var row = dataGV__noencontradas.Rows[e.RowIndex];
+            var dni = Convert.ToString(row.Cells["colMissingDni"].Value)?.Trim();
+
+            if (string.IsNullOrWhiteSpace(dni))
+            {
+                return;
+            }
+
+            int headRowIndex = FindRowIndexByDni(dni);
+            if (headRowIndex < 0)
+            {
+                MessageBox.Show(
+                    "El DNI ingresado no se encuentra en la lista de alumnos cargada.",
+                    "DNI no encontrado",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            var metadata = GetScanMetadata(row.Tag);
+            if (metadata is null)
+            {
+                return;
+            }
+
+            UpdateRowWithScanData(dni, metadata.ScanIndex, metadata.ProcessedOn == DateTime.MinValue ? DateTime.Now : metadata.ProcessedOn);
+
+            dataGV__noencontradas.ClearSelection();
+            SelectRowByDni(dni);
+            MostrarDetalleDesdeFila(headRowIndex);
         }
 
 
