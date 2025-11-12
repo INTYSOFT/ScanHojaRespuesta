@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Windows.Forms;
 using ContrlAcademico;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
@@ -22,22 +21,10 @@ namespace ContrlAcademico.Services
 
             // 1) Convertir a Mat ya alineada
             using var matPage = BitmapConverter.ToMat(fullPageBmp);
+            int pageWidth = matPage.Width;
+            int pageHeight = matPage.Height;
 
-            int W = matPage.Width,
-                H = matPage.Height;
-
-            // 2) Calcular rect usando NormRoiModel
-            var rn = _cfg.DniRegionNorm;
-            int x = (int)Math.Round(rn.X * W);
-            int y = (int)Math.Round(rn.Y * H);
-            int w = (int)Math.Round(rn.W * W);
-            int h = (int)Math.Round(rn.H * H);
-
-            var rect = new Rect(x, y, w, h);
-            rect = rect.Intersect(new Rect(0, 0, W, H));
-            if (rect.Width <= 0 || rect.Height <= 0)
-                throw new InvalidOperationException($"Region DNI fuera de página: {rect}");
-
+            var rect = GetDniRect(pageWidth, pageHeight);
             Mat? debugMat = null;
             if (generateDebugImage)
             {
@@ -47,22 +34,24 @@ namespace ContrlAcademico.Services
 
             // 3) Extraer ROI y binarizar
             using var roiMat = new Mat(matPage, rect);
-            Cv2.CvtColor(roiMat, roiMat, ColorConversionCodes.BGR2GRAY);
+            using var gray = new Mat();
+            Cv2.CvtColor(roiMat, gray, ColorConversionCodes.BGR2GRAY);
             Cv2.AdaptiveThreshold(
-                roiMat, roiMat, 255,
+                gray, gray, 255,
                 AdaptiveThresholdTypes.GaussianC,
-                ThresholdTypes.BinaryInv, 11, 2);
+                ThresholdTypes.BinaryInv,
+                15, 4);
+
+            using var filtered = PrepareBubbleMask(gray);
 
             // Antes de dividir la región en celdas buscamos la zona que contiene realmente
             // la parrilla de burbujas. Las plantillas suelen dejar márgenes arriba y a los
             // lados para textos, lo que desplaza las marcas si se reparte el ancho total
             // de la ROI. Calculamos el rectángulo "útil" analizando la densidad de tinta
-            // por filas y columnas.
-            var bubbleBounds = DetectBubbleBounds(roiMat);
-            using var bubbleMat = new Mat(roiMat, bubbleBounds);
-
-            // 4) OMR 8×10
+            // por filas y columnas sobre la imagen filtrada.
             const int cols = 8, rows = 10;
+            var bubbleBounds = DetectBubbleBounds(filtered, cols, rows);
+            using var bubbleMat = new Mat(gray, bubbleBounds);
 
             // Calculamos los bordes exactos de cada celda usando doble precisión para
             // evitar acumulación de errores por redondeos sucesivos. De esta manera las
@@ -133,7 +122,7 @@ namespace ContrlAcademico.Services
                         rect.Y + bubbleBounds.Y + localRect.Y,
                         localRect.Width,
                         localRect.Height);
-                    highlight = highlight.Intersect(new Rect(0, 0, W, H));
+                    highlight = highlight.Intersect(new Rect(0, 0, pageWidth, pageHeight));
                     if (highlight.Width > 0 && highlight.Height > 0)
                     {
                         Cv2.Rectangle(debugMat, highlight, Scalar.LimeGreen, 2);
@@ -150,6 +139,24 @@ namespace ContrlAcademico.Services
             return string.Join("", digits);
         }
 
+        public Rect GetDniRect(int pageWidth, int pageHeight)
+        {
+            var rn = _cfg.DniRegionNorm;
+            int x = (int)Math.Round(rn.X * pageWidth);
+            int y = (int)Math.Round(rn.Y * pageHeight);
+            int w = (int)Math.Round(rn.W * pageWidth);
+            int h = (int)Math.Round(rn.H * pageHeight);
+
+            var rect = new Rect(x, y, w, h);
+            rect = rect.Intersect(new Rect(0, 0, pageWidth, pageHeight));
+            if (rect.Width <= 0 || rect.Height <= 0)
+            {
+                throw new InvalidOperationException($"Region DNI fuera de página: {rect}");
+            }
+
+            return rect;
+        }
+
         private static int[] BuildEdges(int length, int segments)
         {
             var edges = new int[segments + 1];
@@ -164,7 +171,20 @@ namespace ContrlAcademico.Services
             return edges;
         }
 
-        private static Rect DetectBubbleBounds(Mat roiMat)
+        private static Mat PrepareBubbleMask(Mat binary)
+        {
+            using var kernelClose = Cv2.GetStructuringElement(MorphShapes.Ellipse, new OpenCvSharp.Size(7, 7));
+            var processed = new Mat();
+            Cv2.MorphologyEx(binary, processed, MorphTypes.Close, kernelClose, iterations: 2);
+
+            using var kernelOpen = Cv2.GetStructuringElement(MorphShapes.Rect, new OpenCvSharp.Size(3, 3));
+            Cv2.MorphologyEx(processed, processed, MorphTypes.Open, kernelOpen);
+
+            Cv2.GaussianBlur(processed, processed, new OpenCvSharp.Size(3, 3), 0);
+            return processed;
+        }
+
+        private static Rect DetectBubbleBounds(Mat roiMat, int expectedCols, int expectedRows)
         {
             if (roiMat.Empty())
             {
@@ -185,8 +205,8 @@ namespace ContrlAcademico.Services
                 colProjection[c] = Cv2.CountNonZero(col);
             }
 
-            int rowThreshold = Math.Max(1, (int)Math.Round(roiMat.Cols * 0.04));
-            int colThreshold = Math.Max(1, (int)Math.Round(roiMat.Rows * 0.04));
+            int rowThreshold = Math.Max(1, (int)Math.Round(roiMat.Cols * 0.05));
+            int colThreshold = Math.Max(1, (int)Math.Round(roiMat.Rows * 0.05));
 
             int top = 0;
             while (top < rowProjection.Length && rowProjection[top] < rowThreshold)
@@ -216,13 +236,35 @@ namespace ContrlAcademico.Services
             int height = Math.Max(1, bottom - top + 1);
 
             var bounds = new Rect(left, top, width, height);
-
-            // Si los proyectores no encuentran bordes válidos devolvemos la ROI completa.
             if (bounds.Width <= 0 || bounds.Height <= 0)
             {
-                bounds = new Rect(0, 0, roiMat.Width, roiMat.Height);
+                return new Rect(0, 0, roiMat.Width, roiMat.Height);
             }
 
+            return RefineBounds(bounds, roiMat.Width, roiMat.Height, expectedCols, expectedRows);
+        }
+
+        private static Rect RefineBounds(Rect bounds, int fullWidth, int fullHeight, int cols, int rows)
+        {
+            double targetRatio = (double)cols / rows;
+            double currentRatio = bounds.Width / (double)bounds.Height;
+
+            if (currentRatio > targetRatio)
+            {
+                int targetWidth = (int)Math.Round(bounds.Height * targetRatio);
+                int excess = bounds.Width - targetWidth;
+                bounds.X += excess / 2;
+                bounds.Width = targetWidth;
+            }
+            else if (currentRatio < targetRatio)
+            {
+                int targetHeight = (int)Math.Round(bounds.Width / targetRatio);
+                int excess = bounds.Height - targetHeight;
+                bounds.Y += Math.Max(0, excess / 2);
+                bounds.Height = targetHeight;
+            }
+
+            bounds = bounds.Intersect(new Rect(0, 0, fullWidth, fullHeight));
             return bounds;
         }
 

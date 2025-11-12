@@ -1,10 +1,10 @@
 {
   "dpi": 300,
   "dniRegionNorm": {
-    "x": 0.04, // 5% desde el borde izq
-    "y": 0.21, // 10% desde el borde sup
-    "w": 0.19, // 25% del ancho total
-    "h": 0.34 // 40% de la altura total —justo las 10 filas de burbujas
+    "x": 0.035, // margen izquierdo del bloque de DNI
+    "y": 0.23,  // justo por debajo de los dígitos impresos
+    "w": 0.17,  // hasta antes del texto “MÓDULO”
+    "h": 0.29  // abarca únicamente las 10 filas de burbujas
   },
   "answersGrid": {
     "startX": 105,
