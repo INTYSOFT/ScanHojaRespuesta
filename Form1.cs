@@ -1,5 +1,4 @@
 ﻿using ContrlAcademico.Services;
-using Newtonsoft.Json;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using System.Drawing;
@@ -19,8 +18,8 @@ namespace ContrlAcademico
         private List<char[]> _pageAnswers = new();
 
 
-        private ConfigModel _config;
-        private OmrProcessor _omrProcessor;
+        private ConfigModel _config = null!;
+        private OmrProcessor _omrProcessor = null!;
 
         private bool depurar_imagen = true;
         private readonly string _depurarRoot;
@@ -28,11 +27,9 @@ namespace ContrlAcademico
 
 
         //DNI
-        private readonly ConfigModel _cfg;
-        private readonly PdfRenderer _renderer;
-        //private readonly PerspectiveCorrector _corrector;
-        private readonly DniExtractor _dniExt;
-        private readonly RotationCorrector _corrector;
+        private PdfRenderer _renderer = null!;
+        private DniExtractor _dniExt = null!;
+        private readonly RotationCorrector _corrector = new();
 
 
 
@@ -45,6 +42,7 @@ namespace ContrlAcademico
 
         private bool _calibrated = false;
         private readonly string _configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.json");
+        private const string DefaultGhostscriptPath = @"C:\Program Files\gs\gs10.05.1\bin\gsdll64.dll";
 
         private readonly string? _authToken;
         private readonly EvaluacionProgramadaService _evaluacionService = new();
@@ -98,21 +96,6 @@ namespace ContrlAcademico
             AjustarPbWarped();  // Para el tamaño inicial
 
             LoadConfig();
-
-            //_renderer  = new PdfRenderer(gsPath, _config.Dpi);
-            _corrector = new RotationCorrector();
-            _dniExt    = new DniExtractor(_config);
-
-            _dniExt    = new DniExtractor(_config);
-
-            //DNI
-            var cfgPath = _configPath;
-            _cfg       = ConfigModel.Load(cfgPath);
-            _renderer  = new PdfRenderer(@"C:\Program Files\gs\gs10.05.1\bin\gsdll64.dll", _cfg.Dpi);
-            _corrector = new RotationCorrector();
-            _dniExt    = new DniExtractor(_cfg);
-
-
 
             // 3) Monta los grids
             SetupHeadGrid();
@@ -964,25 +947,31 @@ namespace ContrlAcademico
 
         private void LoadConfig()
         {
-            if (!File.Exists(_configPath))
+            try
+            {
+                var config = ConfigModel.Load(_configPath);
+                ApplyConfiguration(config);
+            }
+            catch (Exception ex)
             {
                 MessageBox.Show(
-                    $"No se encontró el archivo de configuración en:\n{_configPath}",
+                    $"No se pudo cargar la configuración:\n{ex.Message}",
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Environment.Exit(1);
+                throw;
             }
+        }
 
-            _config = JsonConvert.DeserializeObject<ConfigModel>(
-                File.ReadAllText(_configPath))
-                ?? throw new InvalidOperationException("Error al deserializar ConfigModel.");
-
+        private void ApplyConfiguration(ConfigModel config)
+        {
+            _config = config;
             _omrProcessor = new OmrProcessor(
-                _config.AnswersGrid,
-                _config.DniRegion,
+                config.AnswersGrid,
+                config.DniRegion,
                 fillThreshold: 0.5,
                 meanThreshold: 180,
-                deltaMin: 30
-            );
+                deltaMin: 30);
+            _dniExt = new DniExtractor(config);
+            _renderer = new PdfRenderer(DefaultGhostscriptPath, config.Dpi);
         }
 
         private void SetupHeadGrid()
@@ -1149,28 +1138,13 @@ namespace ContrlAcademico
 
         private void btnLoadConfig_Click(object sender, EventArgs e)
         {
-            // Ruta estática al archivo de configuración
-            string configPath = _configPath;
-
-            if (File.Exists(configPath))
+            try
             {
-
-                _config = JsonConvert.DeserializeObject<ConfigModel>(File.ReadAllText(configPath));
-
-                //_omrProcessor = new OmrProcessor(_config.AnswersGrid, fillThreshold: 0.2);
-                _omrProcessor = new OmrProcessor(
-                    _config.AnswersGrid,
-                    _config.DniRegion,    // ← aquí
-                       fillThreshold: 0.5,   // o el umbral de relleno que quieras
-                    meanThreshold: 180,   // Ajusta según tus necesidades
-                    deltaMin: 30          // Ajusta según tus necesidades
-                );
-
-                //logs.AppendText("Configuración cargada y OMR listo.\n");
+                LoadConfig();
             }
-            else
+            catch
             {
-                MessageBox.Show($"No se encontró el archivo de configuración en:\n{configPath}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // El método LoadConfig ya muestra el mensaje de error correspondiente.
             }
         }
 
@@ -1457,7 +1431,7 @@ namespace ContrlAcademico
                 // 2) Recortamos la región del DNI
                 int W = fullPage.Width, H = fullPage.Height;
 
-                var rn = _cfg.DniRegionNorm;
+                var rn = _config.DniRegionNorm;
                 var roiRect = new Rectangle(
                     (int)(rn.X*W), (int)(rn.Y*H),
                     (int)(rn.W*W), (int)(rn.H*H)
@@ -1465,19 +1439,29 @@ namespace ContrlAcademico
 
                 using var roiBmp = fullPage.Clone(roiRect, fullPage.PixelFormat);
 
-                // 2.a) Mostramos la región del DNI
+                // 2.a) Mostramos la región del DNI sin procesar
                 pbThresh.Image?.Dispose();
                 pbThresh.Image = (Bitmap)roiBmp.Clone();
 
-                // 3) Extraemos el DNI
+                // 3) Extraemos el DNI empleando el recorte preciso de burbujas
                 Bitmap? dniDebugImage = null;
                 string dni = depurar_imagen
                     ? _dniExt.Extract(fullPage, generateDebugImage: true, out dniDebugImage)
                     : _dniExt.Extract(fullPage);
+
+                Bitmap dniPreview;
                 if (depurar_imagen && dniDebugImage is not null)
                 {
+                    dniPreview = (Bitmap)dniDebugImage.Clone();
                     SaveDebugImage("dni", "dni", i, dniDebugImage);
                 }
+                else
+                {
+                    dniPreview = (Bitmap)roiBmp.Clone();
+                }
+
+                pbDni.Image?.Dispose();
+                pbDni.Image = dniPreview;
                 //logs.AppendText($"Página {i+1:000} → DNI: {dni}\r\n");
 
                 // 4) Avanzamos la barra y dejamos que Windows repinte
@@ -1496,7 +1480,7 @@ namespace ContrlAcademico
         {
             // 1) Dibujar el rectángulo de la región del DNI sobre la página
             int W = fullPage.Width, H = fullPage.Height;
-            var rn = _cfg.DniRegionNorm;
+            var rn = _config.DniRegionNorm;
             var roiRect = new Rect(
                 (int)(rn.X * W), (int)(rn.Y * H),
                 (int)(rn.W * W), (int)(rn.H * H)
