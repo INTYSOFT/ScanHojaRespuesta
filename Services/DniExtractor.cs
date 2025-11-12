@@ -55,8 +55,33 @@ namespace ContrlAcademico.Services
 
             // 4) OMR 8×10
             const int cols = 8, rows = 10;
-            int cellW = roiMat.Width  / cols,
-                cellH = roiMat.Height / rows;
+
+            // Calculamos los bordes exactos de cada celda usando doble precisión para
+            // evitar acumulación de errores por redondeos sucesivos. De esta manera las
+            // marcas se centran perfectamente en cada burbuja, sin sobrepasar su tamaño.
+            var colEdges = new int[cols + 1];
+            var rowEdges = new int[rows + 1];
+
+            double colStep = (double)roiMat.Width / cols;
+            double rowStep = (double)roiMat.Height / rows;
+            for (int i = 0; i <= cols; i++)
+            {
+                colEdges[i] = (int)Math.Round(i * colStep);
+            }
+            for (int i = 0; i <= rows; i++)
+            {
+                rowEdges[i] = (int)Math.Round(i * rowStep);
+            }
+
+            // Garantizamos que el último borde coincida exactamente con el tamaño real.
+            colEdges[^1] = roiMat.Width;
+            rowEdges[^1] = roiMat.Height;
+
+            // El diámetro visible de la burbuja es menor que la celda total. Usamos un
+            // factor empírico basado en las plantillas de examen para encajar el
+            // rectángulo en la burbuja real y evitar capturar ruido exterior.
+            const double bubbleScaleX = 0.78; // relación burbuja/ancho de celda
+            const double bubbleScaleY = 0.78; // relación burbuja/alto de celda
 
             var digits = new List<char>(cols);
 
@@ -64,29 +89,57 @@ namespace ContrlAcademico.Services
             for (int c = 0; c < cols; c++)
             {
                 int bestVal = 0, bestIdx = -1;
+                Rect? bestRect = null;
+                int cellX = colEdges[c];
+                int cellX2 = colEdges[c + 1];
+                int cellWidth = Math.Max(1, cellX2 - cellX);
+                int bubbleW = Math.Max(1, (int)Math.Round(cellWidth * bubbleScaleX));
+                int bubbleOffsetX = cellX + (cellWidth - bubbleW) / 2;
+
                 for (int r = 0; r < rows; r++)
                 {
-                    var cell = new Rect(c*cellW, r*cellH, cellW, cellH);
-                    using var sub = new Mat(roiMat, cell);
+                    int cellY = rowEdges[r];
+                    int cellY2 = rowEdges[r + 1];
+                    int cellHeight = Math.Max(1, cellY2 - cellY);
+                    int bubbleH = Math.Max(1, (int)Math.Round(cellHeight * bubbleScaleY));
+                    int bubbleOffsetY = cellY + (cellHeight - bubbleH) / 2;
+
+                    var bubbleRect = new Rect(bubbleOffsetX, bubbleOffsetY, bubbleW, bubbleH);
+                    bubbleRect = bubbleRect.Intersect(new Rect(0, 0, roiMat.Width, roiMat.Height));
+                    if (bubbleRect.Width <= 0 || bubbleRect.Height <= 0)
+                    {
+                        continue;
+                    }
+
+                    using var sub = new Mat(roiMat, bubbleRect);
                     int cnt = Cv2.CountNonZero(sub);
                     if (cnt > bestVal)
                     {
                         bestVal = cnt;
                         bestIdx = r;
+                        bestRect = bubbleRect;
                     }
                 }
 
-                const int THRESHOLD = 50;
-                bool validDigit = bestIdx >= 0 && bestVal >= THRESHOLD;
+                const double MIN_FILL_RATIO = 0.18;
+                int dynamicThreshold = bestRect.HasValue
+                    ? Math.Max(1, (int)Math.Round(bestRect.Value.Width * bestRect.Value.Height * MIN_FILL_RATIO))
+                    : 50;
+                bool validDigit = bestIdx >= 0 && bestVal >= dynamicThreshold;
                 digits.Add(validDigit ? (char)('0' + bestIdx) : '-');
 
                 if (generateDebugImage && debugMat is not null && validDigit)
                 {
+                    var localRect = bestRect ?? new Rect(bubbleOffsetX, rowEdges[bestIdx], bubbleW,
+                        Math.Max(1, (int)Math.Round((rowEdges[bestIdx + 1] - rowEdges[bestIdx]) * bubbleScaleY)));
+                    int highlightX = rect.X + localRect.X;
+                    int highlightY = rect.Y + localRect.Y;
+
                     var highlight = new Rect(
-                        rect.X + c * cellW,
-                        rect.Y + bestIdx * cellH,
-                        cellW,
-                        cellH);
+                        highlightX,
+                        highlightY,
+                        localRect.Width,
+                        localRect.Height);
                     highlight = highlight.Intersect(new Rect(0, 0, W, H));
                     if (highlight.Width > 0 && highlight.Height > 0)
                     {
