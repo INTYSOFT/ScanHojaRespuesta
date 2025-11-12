@@ -3,9 +3,12 @@ using Newtonsoft.Json;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Runtime.InteropServices;
 
 namespace ContrlAcademico
 {
@@ -18,6 +21,10 @@ namespace ContrlAcademico
 
         private ConfigModel _config;
         private OmrProcessor _omrProcessor;
+
+        private bool depurar_imagen = true;
+        private readonly string _depurarRoot;
+        private bool _depurarErrorNotificado;
 
 
         //DNI
@@ -79,6 +86,7 @@ namespace ContrlAcademico
         public Form1(string? authToken = null)
         {
             _authToken = authToken;
+            _depurarRoot = GetDepurarRoot();
             InitializeComponent();
             // suscribirte al evento MouseClick
             pbWarped.MouseClick += PbWarped_MouseClick;
@@ -520,6 +528,44 @@ namespace ContrlAcademico
                 row.Cells["colPage"].Value = string.Empty;
                 row.Cells["colFecha"].Value = string.Empty;
                 row.Tag = null;
+            }
+        }
+
+        private string GetDepurarRoot()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return @"D:\\depurar";
+            }
+
+            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "depurar");
+        }
+
+        private void SaveDebugImage(string subfolder, string prefix, int pageIndex, Bitmap image)
+        {
+            try
+            {
+                string folder = Path.Combine(_depurarRoot, subfolder);
+                Directory.CreateDirectory(folder);
+                string fileName = $"{prefix}_pagina_{pageIndex + 1:000}.png";
+                string destinationPath = Path.Combine(folder, fileName);
+                image.Save(destinationPath, ImageFormat.Png);
+            }
+            catch (Exception ex)
+            {
+                if (!_depurarErrorNotificado)
+                {
+                    _depurarErrorNotificado = true;
+                    MessageBox.Show(
+                        $"No se pudo guardar la imagen de depuración en '{_depurarRoot}':\n{ex.Message}",
+                        "Depuración de imágenes",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                }
+            }
+            finally
+            {
+                image.Dispose();
             }
         }
 
@@ -1180,7 +1226,7 @@ namespace ContrlAcademico
 
                 for (int i = 0; i < pages.Count; i++)
                 {
-                    string dni = ReadDniFromPage(pages[i]);
+                    string dni = ReadDniFromPage(pages[i], i);
 
                     Bitmap warped = corrector.Correct(pages[i], out _, out _);
 
@@ -1201,7 +1247,14 @@ namespace ContrlAcademico
                         CalibrateGrid(gray);
                     }
 
-                    var answers = _omrProcessor.Process(warped);
+                    Bitmap? answersDebugImage = null;
+                    var answers = depurar_imagen
+                        ? _omrProcessor.Process(warped, out answersDebugImage)
+                        : _omrProcessor.Process(warped);
+                    if (depurar_imagen && answersDebugImage is not null)
+                    {
+                        SaveDebugImage("respuestas", "respuestas", i, answersDebugImage);
+                    }
                     warped.Dispose();
 
                     _pageDnis.Add(dni);
@@ -1417,7 +1470,14 @@ namespace ContrlAcademico
                 pbThresh.Image = (Bitmap)roiBmp.Clone();
 
                 // 3) Extraemos el DNI
-                string dni = _dniExt.Extract(fullPage);
+                Bitmap? dniDebugImage = null;
+                string dni = depurar_imagen
+                    ? _dniExt.Extract(fullPage, generateDebugImage: true, out dniDebugImage)
+                    : _dniExt.Extract(fullPage);
+                if (depurar_imagen && dniDebugImage is not null)
+                {
+                    SaveDebugImage("dni", "dni", i, dniDebugImage);
+                }
                 //logs.AppendText($"Página {i+1:000} → DNI: {dni}\r\n");
 
                 // 4) Avanzamos la barra y dejamos que Windows repinte
@@ -1432,7 +1492,7 @@ namespace ContrlAcademico
         }
 
 
-        private string ReadDniFromPage(Bitmap fullPage)
+        private string ReadDniFromPage(Bitmap fullPage, int pageIndex)
         {
             // 1) Dibujar el rectángulo de la región del DNI sobre la página
             int W = fullPage.Width, H = fullPage.Height;
@@ -1465,7 +1525,22 @@ namespace ContrlAcademico
             _answersPages.Add(answers);
 
             // 4) Extraer el DNI con tu extractor (que aplica OMR 8×10 sobre la región)
-            string dni = _dniExt.Extract(fullPage);
+            string dni;
+            if (depurar_imagen)
+            {
+                string extracted = _dniExt.Extract(fullPage, generateDebugImage: true, out var dniDebugImage);
+                if (dniDebugImage is not null)
+                {
+                    SaveDebugImage("dni", "dni", pageIndex, dniDebugImage);
+                }
+
+                dni = extracted;
+            }
+            else
+            {
+                dni = _dniExt.Extract(fullPage);
+            }
+
             return dni;
         }
 
