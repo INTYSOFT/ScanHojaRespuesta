@@ -55,20 +55,60 @@ namespace ContrlAcademico.Services
 
             // 4) OMR 8×10
             const int cols = 8, rows = 10;
-            int cellW = roiMat.Width  / cols,
-                cellH = roiMat.Height / rows;
+
+            // calculamos usando pasos decimales para asegurar celdas uniformes
+            var colEdges = new int[cols + 1];
+            var rowEdges = new int[rows + 1];
+            colEdges[0] = 0;
+            rowEdges[0] = 0;
+            double stepW = roiMat.Width  / (double)cols;
+            double stepH = roiMat.Height / (double)rows;
+            for (int c = 1; c <= cols; c++)
+                colEdges[c] = c == cols ? roiMat.Width : (int)Math.Round(stepW * c);
+            for (int r = 1; r <= rows; r++)
+                rowEdges[r] = r == rows ? roiMat.Height : (int)Math.Round(stepH * r);
+
+            static Rect ShrinkRect(Rect source, double marginX, double marginY)
+            {
+                int shrinkX = (int)Math.Round(source.Width * marginX);
+                int shrinkY = (int)Math.Round(source.Height * marginY);
+                int newW = Math.Max(1, source.Width - 2 * shrinkX);
+                int newH = Math.Max(1, source.Height - 2 * shrinkY);
+                return new Rect(
+                    source.X + shrinkX,
+                    source.Y + shrinkY,
+                    newW,
+                    newH);
+            }
 
             var digits = new List<char>(cols);
 
+            const double marginRatio = 0.18; // deja la parte central de la burbuja
+            const int THRESHOLD = 50;
 
             for (int c = 0; c < cols; c++)
             {
                 int bestVal = 0, bestIdx = -1;
                 for (int r = 0; r < rows; r++)
                 {
-                    var cell = new Rect(c*cellW, r*cellH, cellW, cellH);
+                    var baseCell = new Rect(
+                        colEdges[c],
+                        rowEdges[r],
+                        Math.Max(1, colEdges[c + 1] - colEdges[c]),
+                        Math.Max(1, rowEdges[r + 1] - rowEdges[r]));
+
+                    var cell = ShrinkRect(baseCell, marginRatio, marginRatio);
                     using var sub = new Mat(roiMat, cell);
-                    int cnt = Cv2.CountNonZero(sub);
+
+                    using var mask = Mat.Zeros(sub.Size(), MatType.CV_8UC1);
+                    var center = new Point(mask.Width / 2, mask.Height / 2);
+                    int radius = (int)Math.Round(Math.Min(mask.Width, mask.Height) * 0.45);
+                    Cv2.Circle(mask, center, Math.Max(1, radius), Scalar.White, -1);
+
+                    using var masked = new Mat();
+                    Cv2.BitwiseAnd(sub, mask, masked);
+                    int cnt = Cv2.CountNonZero(masked);
+
                     if (cnt > bestVal)
                     {
                         bestVal = cnt;
@@ -76,17 +116,22 @@ namespace ContrlAcademico.Services
                     }
                 }
 
-                const int THRESHOLD = 50;
                 bool validDigit = bestIdx >= 0 && bestVal >= THRESHOLD;
                 digits.Add(validDigit ? (char)('0' + bestIdx) : '-');
 
                 if (generateDebugImage && debugMat is not null && validDigit)
                 {
-                    var highlight = new Rect(
-                        rect.X + c * cellW,
-                        rect.Y + bestIdx * cellH,
-                        cellW,
-                        cellH);
+                    var baseCell = new Rect(
+                        colEdges[c],
+                        rowEdges[bestIdx],
+                        Math.Max(1, colEdges[c + 1] - colEdges[c]),
+                        Math.Max(1, rowEdges[bestIdx + 1] - rowEdges[bestIdx]));
+                    var highlight = ShrinkRect(baseCell, marginRatio, marginRatio);
+                    highlight = new Rect(
+                        rect.X + highlight.X,
+                        rect.Y + highlight.Y,
+                        highlight.Width,
+                        highlight.Height);
                     highlight = highlight.Intersect(new Rect(0, 0, W, H));
                     if (highlight.Width > 0 && highlight.Height > 0)
                     {
