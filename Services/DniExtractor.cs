@@ -104,7 +104,10 @@ namespace ContrlAcademico.Services
                     }
 
                     using var sub = new Mat(bubbleMat, bubbleRectLocal);
-                    int cnt = Cv2.CountNonZero(sub);
+                    using var mask = CreateBubbleMask(sub.Width, sub.Height);
+                    using var masked = new Mat();
+                    Cv2.BitwiseAnd(sub, sub, masked, mask);
+                    int cnt = Cv2.CountNonZero(masked);
                     if (cnt > bestVal)
                     {
                         bestVal = cnt;
@@ -224,6 +227,18 @@ namespace ContrlAcademico.Services
             }
 
             return bounds;
+        }
+
+        private static Mat CreateBubbleMask(int width, int height)
+        {
+            width = Math.Max(1, width);
+            height = Math.Max(1, height);
+
+            var mask = new Mat(height, width, MatType.CV_8UC1, Scalar.Black);
+            var center = new OpenCvSharp.Point(width / 2, height / 2);
+            var axes = new OpenCvSharp.Size(Math.Max(1, width / 2), Math.Max(1, height / 2));
+            Cv2.Ellipse(mask, center, axes, 0, 0, 360, Scalar.White, -1);
+            return mask;
         }
 
     }
