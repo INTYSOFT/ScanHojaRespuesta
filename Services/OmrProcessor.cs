@@ -179,78 +179,7 @@ namespace ContrlAcademico.Services
 
             return answers;
         }
-
-        public char[] old_Process(Bitmap warped)
-        {
-            // 1) Bitmap → Mat
-            Mat src = BitmapConverter.ToMat(warped);
-
-            // 2) Preprocesado: gris → blur → adaptive threshold
-            Mat gray = new Mat();
-            Cv2.CvtColor(src, gray, ColorConversionCodes.BGR2GRAY);
-
-            Cv2.GaussianBlur(gray, gray, new OpenCvSharp.Size(5, 5), 0);
-            Mat thresh = new Mat();
-            Cv2.AdaptiveThreshold(
-                gray,
-                thresh,
-                255,                             // maxValue
-                AdaptiveThresholdTypes.GaussianC,
-                ThresholdTypes.BinaryInv,
-                11,                              // blockSize
-                2                                // este es el “C”
-            );
-
-            var g = _grid;
-            int rows = g.Rows;
-            int cols = g.Cols;
-            int blocks = g.BlockCount;
-            int spacing = g.BlockSpacing;
-            char[] answers = new char[rows * blocks];
-            int idx = 0;
-
-            for (int b = 0; b < blocks; b++)
-            {
-                int blockX = g.StartX + b * (cols * g.Dx + spacing);
-
-                for (int r = 0; r < rows; r++, idx++)
-                {
-                    double maxCount = 0;
-                    int bestOpt = -1;
-                    int y = g.StartY + r * g.Dy;
-
-                    for (int c = 0; c < cols; c++)
-                    {
-                        int x = blockX + c * g.Dx;
-
-                        // ——— CLAMP de rectángulo ———
-                        int x2 = Math.Clamp(x, 0, thresh.Width);
-                        int y2 = Math.Clamp(y, 0, thresh.Height);
-                        int w2 = Math.Min(g.BubbleW, thresh.Width  - x2);
-                        int h2 = Math.Min(g.BubbleH, thresh.Height - y2);
-                        if (w2 <= 0 || h2 <= 0)
-                            continue;
-                        var rect = new Rect(x2, y2, w2, h2);
-                        // ——————————————————————
-
-                        Mat roi = new Mat(thresh, rect);
-                        double cnt = Cv2.CountNonZero(roi);
-                        if (cnt > maxCount)
-                        {
-                            maxCount = cnt;
-                            bestOpt = c;
-                        }
-                    }
-
-                    double area = g.BubbleW * g.BubbleH;
-                    answers[idx] = (bestOpt >= 0 && maxCount >= area * _fillThreshold)
-                        ? (char)('A' + bestOpt)
-                        : '-';
-                }
-            }
-
-            return answers;
-        }
+        
 
     }
 }
