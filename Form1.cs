@@ -1567,5 +1567,9 @@ namespace ContrlAcademico
             lblPageInfo.Text = $"Click en X={x}, Y={y}";
         }
 
+        private void lblSeccion_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
