@@ -46,11 +46,13 @@
             lblEvaluacion = new Label();
             lblSeccion = new Label();
             cmbSecciones = new ComboBox();
+            dataGV__noencontradas = new DataGridView();
             ((System.ComponentModel.ISupportInitialize)pbWarped).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pbThresh).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pbDni).BeginInit();
             ((System.ComponentModel.ISupportInitialize)dgvHead).BeginInit();
             ((System.ComponentModel.ISupportInitialize)dgvDetalle).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)dataGV__noencontradas).BeginInit();
             SuspendLayout();
             // 
             // btnSelectPdf
@@ -89,7 +91,7 @@
             // 
             // pbWarped
             // 
-            pbWarped.Location = new Point(629, 7);
+            pbWarped.Location = new Point(753, 0);
             pbWarped.Name = "pbWarped";
             pbWarped.Size = new Size(311, 275);
             pbWarped.SizeMode = PictureBoxSizeMode.Zoom;
@@ -170,7 +172,7 @@
             dgvHead.MultiSelect = false;
             dgvHead.Name = "dgvHead";
             dgvHead.RowHeadersWidth = 62;
-            dgvHead.Size = new Size(605, 225);
+            dgvHead.Size = new Size(363, 225);
             dgvHead.TabIndex = 17;
             dgvHead.CellContentClick += dgvHead_CellContentClick;
             // 
@@ -180,7 +182,7 @@
             dgvDetalle.Location = new Point(10, 536);
             dgvDetalle.Name = "dgvDetalle";
             dgvDetalle.RowHeadersWidth = 62;
-            dgvDetalle.Size = new Size(605, 421);
+            dgvDetalle.Size = new Size(222, 421);
             dgvDetalle.TabIndex = 18;
             // 
             // cmbEvaluaciones
@@ -221,11 +223,22 @@
             cmbSecciones.TabIndex = 22;
             cmbSecciones.SelectedIndexChanged += cmbSecciones_SelectedIndexChanged;
             // 
+            // dataGV__noencontradas
+            // 
+            dataGV__noencontradas.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGV__noencontradas.Location = new Point(379, 305);
+            dataGV__noencontradas.MultiSelect = false;
+            dataGV__noencontradas.Name = "dataGV__noencontradas";
+            dataGV__noencontradas.RowHeadersWidth = 62;
+            dataGV__noencontradas.Size = new Size(363, 225);
+            dataGV__noencontradas.TabIndex = 24;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1210, 969);
+            Controls.Add(dataGV__noencontradas);
             Controls.Add(btnRegistrarDatos);
             Controls.Add(cmbSecciones);
             Controls.Add(lblSeccion);
@@ -252,6 +265,7 @@
             ((System.ComponentModel.ISupportInitialize)pbDni).EndInit();
             ((System.ComponentModel.ISupportInitialize)dgvHead).EndInit();
             ((System.ComponentModel.ISupportInitialize)dgvDetalle).EndInit();
+            ((System.ComponentModel.ISupportInitialize)dataGV__noencontradas).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -276,5 +290,6 @@
         private Label lblSeccion;
         private ComboBox cmbSecciones;
         private Button btnRegistrarDatos;
+        private DataGridView dataGV__noencontradas;
     }
 }
