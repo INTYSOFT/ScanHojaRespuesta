@@ -53,29 +53,22 @@ namespace ContrlAcademico.Services
                 AdaptiveThresholdTypes.GaussianC,
                 ThresholdTypes.BinaryInv, 11, 2);
 
+            // Antes de dividir la región en celdas buscamos la zona que contiene realmente
+            // la parrilla de burbujas. Las plantillas suelen dejar márgenes arriba y a los
+            // lados para textos, lo que desplaza las marcas si se reparte el ancho total
+            // de la ROI. Calculamos el rectángulo "útil" analizando la densidad de tinta
+            // por filas y columnas.
+            var bubbleBounds = DetectBubbleBounds(roiMat);
+            using var bubbleMat = new Mat(roiMat, bubbleBounds);
+
             // 4) OMR 8×10
             const int cols = 8, rows = 10;
 
             // Calculamos los bordes exactos de cada celda usando doble precisión para
             // evitar acumulación de errores por redondeos sucesivos. De esta manera las
             // marcas se centran perfectamente en cada burbuja, sin sobrepasar su tamaño.
-            var colEdges = new int[cols + 1];
-            var rowEdges = new int[rows + 1];
-
-            double colStep = (double)roiMat.Width / cols;
-            double rowStep = (double)roiMat.Height / rows;
-            for (int i = 0; i <= cols; i++)
-            {
-                colEdges[i] = (int)Math.Round(i * colStep);
-            }
-            for (int i = 0; i <= rows; i++)
-            {
-                rowEdges[i] = (int)Math.Round(i * rowStep);
-            }
-
-            // Garantizamos que el último borde coincida exactamente con el tamaño real.
-            colEdges[^1] = roiMat.Width;
-            rowEdges[^1] = roiMat.Height;
+            var colEdges = BuildEdges(bubbleMat.Width, cols);
+            var rowEdges = BuildEdges(bubbleMat.Height, rows);
 
             // El diámetro visible de la burbuja es menor que la celda total. Usamos un
             // factor empírico basado en las plantillas de examen para encajar el
@@ -84,7 +77,6 @@ namespace ContrlAcademico.Services
             const double bubbleScaleY = 0.78; // relación burbuja/alto de celda
 
             var digits = new List<char>(cols);
-
 
             for (int c = 0; c < cols; c++)
             {
@@ -104,20 +96,20 @@ namespace ContrlAcademico.Services
                     int bubbleH = Math.Max(1, (int)Math.Round(cellHeight * bubbleScaleY));
                     int bubbleOffsetY = cellY + (cellHeight - bubbleH) / 2;
 
-                    var bubbleRect = new Rect(bubbleOffsetX, bubbleOffsetY, bubbleW, bubbleH);
-                    bubbleRect = bubbleRect.Intersect(new Rect(0, 0, roiMat.Width, roiMat.Height));
-                    if (bubbleRect.Width <= 0 || bubbleRect.Height <= 0)
+                    var bubbleRectLocal = new Rect(bubbleOffsetX, bubbleOffsetY, bubbleW, bubbleH);
+                    bubbleRectLocal = bubbleRectLocal.Intersect(new Rect(0, 0, bubbleMat.Width, bubbleMat.Height));
+                    if (bubbleRectLocal.Width <= 0 || bubbleRectLocal.Height <= 0)
                     {
                         continue;
                     }
 
-                    using var sub = new Mat(roiMat, bubbleRect);
+                    using var sub = new Mat(bubbleMat, bubbleRectLocal);
                     int cnt = Cv2.CountNonZero(sub);
                     if (cnt > bestVal)
                     {
                         bestVal = cnt;
                         bestIdx = r;
-                        bestRect = bubbleRect;
+                        bestRect = bubbleRectLocal;
                     }
                 }
 
@@ -130,14 +122,15 @@ namespace ContrlAcademico.Services
 
                 if (generateDebugImage && debugMat is not null && validDigit)
                 {
-                    var localRect = bestRect ?? new Rect(bubbleOffsetX, rowEdges[bestIdx], bubbleW,
-                        Math.Max(1, (int)Math.Round((rowEdges[bestIdx + 1] - rowEdges[bestIdx]) * bubbleScaleY)));
-                    int highlightX = rect.X + localRect.X;
-                    int highlightY = rect.Y + localRect.Y;
+                    var localRect = bestRect ?? new Rect(
+                        bubbleOffsetX,
+                        rowEdges[Math.Max(0, bestIdx)],
+                        bubbleW,
+                        Math.Max(1, (int)Math.Round((rowEdges[Math.Min(rows, bestIdx + 1)] - rowEdges[Math.Max(0, bestIdx)]) * bubbleScaleY)));
 
                     var highlight = new Rect(
-                        highlightX,
-                        highlightY,
+                        rect.X + bubbleBounds.X + localRect.X,
+                        rect.Y + bubbleBounds.Y + localRect.Y,
                         localRect.Width,
                         localRect.Height);
                     highlight = highlight.Intersect(new Rect(0, 0, W, H));
@@ -155,6 +148,82 @@ namespace ContrlAcademico.Services
             }
 
             return string.Join("", digits);
+        }
+
+        private static int[] BuildEdges(int length, int segments)
+        {
+            var edges = new int[segments + 1];
+            double step = (double)length / segments;
+            for (int i = 0; i <= segments; i++)
+            {
+                edges[i] = (int)Math.Round(i * step);
+            }
+
+            // Garantizamos que el último borde coincida exactamente con la dimensión real
+            edges[^1] = length;
+            return edges;
+        }
+
+        private static Rect DetectBubbleBounds(Mat roiMat)
+        {
+            if (roiMat.Empty())
+            {
+                return new Rect(0, 0, roiMat.Width, roiMat.Height);
+            }
+
+            int[] rowProjection = new int[roiMat.Rows];
+            for (int r = 0; r < roiMat.Rows; r++)
+            {
+                using var row = roiMat.SubMat(r, r + 1, 0, roiMat.Cols);
+                rowProjection[r] = Cv2.CountNonZero(row);
+            }
+
+            int[] colProjection = new int[roiMat.Cols];
+            for (int c = 0; c < roiMat.Cols; c++)
+            {
+                using var col = roiMat.SubMat(0, roiMat.Rows, c, c + 1);
+                colProjection[c] = Cv2.CountNonZero(col);
+            }
+
+            int rowThreshold = Math.Max(1, (int)Math.Round(roiMat.Cols * 0.04));
+            int colThreshold = Math.Max(1, (int)Math.Round(roiMat.Rows * 0.04));
+
+            int top = 0;
+            while (top < rowProjection.Length && rowProjection[top] < rowThreshold)
+            {
+                top++;
+            }
+
+            int bottom = rowProjection.Length - 1;
+            while (bottom > top && rowProjection[bottom] < rowThreshold)
+            {
+                bottom--;
+            }
+
+            int left = 0;
+            while (left < colProjection.Length && colProjection[left] < colThreshold)
+            {
+                left++;
+            }
+
+            int right = colProjection.Length - 1;
+            while (right > left && colProjection[right] < colThreshold)
+            {
+                right--;
+            }
+
+            int width = Math.Max(1, right - left + 1);
+            int height = Math.Max(1, bottom - top + 1);
+
+            var bounds = new Rect(left, top, width, height);
+
+            // Si los proyectores no encuentran bordes válidos devolvemos la ROI completa.
+            if (bounds.Width <= 0 || bounds.Height <= 0)
+            {
+                bounds = new Rect(0, 0, roiMat.Width, roiMat.Height);
+            }
+
+            return bounds;
         }
 
     }
