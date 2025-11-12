@@ -14,7 +14,12 @@ namespace ContrlAcademico.Services
         public DniExtractor(ConfigModel cfg) => _cfg = cfg;
 
         public string Extract(Bitmap fullPageBmp)
-        { 
+            => Extract(fullPageBmp, generateDebugImage: false, out _);
+
+        public string Extract(Bitmap fullPageBmp, bool generateDebugImage, out Bitmap? debugImage)
+        {
+            debugImage = null;
+
             // 1) Convertir a Mat ya alineada
             using var matPage = BitmapConverter.ToMat(fullPageBmp);
 
@@ -32,6 +37,13 @@ namespace ContrlAcademico.Services
             rect = rect.Intersect(new Rect(0, 0, W, H));
             if (rect.Width <= 0 || rect.Height <= 0)
                 throw new InvalidOperationException($"Region DNI fuera de página: {rect}");
+
+            Mat? debugMat = null;
+            if (generateDebugImage)
+            {
+                debugMat = matPage.Clone();
+                Cv2.Rectangle(debugMat, rect, Scalar.LimeGreen, 2);
+            }
 
             // 3) Extraer ROI y binarizar
             using var roiMat = new Mat(matPage, rect);
@@ -63,14 +75,30 @@ namespace ContrlAcademico.Services
                         bestIdx = r;
                     }
                 }
-                // Si fuese necesario ajusta este umbral:
-                const int THRESHOLD = 50;
-                if (bestIdx < 0 || bestVal < THRESHOLD)
-                    digits.Add('-');
-                else
-                    digits.Add((char)('0' + bestIdx));
 
-                //digits.Add(bestIdx < 0 || bestVal < 50 ? '-' : (char)('0' + bestIdx));
+                const int THRESHOLD = 50;
+                bool validDigit = bestIdx >= 0 && bestVal >= THRESHOLD;
+                digits.Add(validDigit ? (char)('0' + bestIdx) : '-');
+
+                if (generateDebugImage && debugMat is not null && validDigit)
+                {
+                    var highlight = new Rect(
+                        rect.X + c * cellW,
+                        rect.Y + bestIdx * cellH,
+                        cellW,
+                        cellH);
+                    highlight = highlight.Intersect(new Rect(0, 0, W, H));
+                    if (highlight.Width > 0 && highlight.Height > 0)
+                    {
+                        Cv2.Rectangle(debugMat, highlight, Scalar.LimeGreen, 2);
+                    }
+                }
+            }
+
+            if (generateDebugImage && debugMat is not null)
+            {
+                debugImage = BitmapConverter.ToBitmap(debugMat);
+                debugMat.Dispose();
             }
 
             return string.Join("", digits);

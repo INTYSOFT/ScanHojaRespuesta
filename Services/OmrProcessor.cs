@@ -1,5 +1,8 @@
 ﻿using OpenCvSharp;
 using OpenCvSharp.Extensions;
+using System.Drawing;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 
@@ -90,12 +93,26 @@ namespace ContrlAcademico.Services
 
 
         public char[] Process(Bitmap warpedBmp)
+            => ProcessInternal(warpedBmp, generateDebug: false, out _);
+
+        public char[] Process(Bitmap warpedBmp, out Bitmap? debugImage)
+            => ProcessInternal(warpedBmp, generateDebug: true, out debugImage);
+
+        private char[] ProcessInternal(Bitmap warpedBmp, bool generateDebug, out Bitmap? debugImage)
         {
+            debugImage = null;
+
             // 1) Convertir a Mat y llevar a gris+blur
             using var src = BitmapConverter.ToMat(warpedBmp);
             using var gray = new Mat();
             Cv2.CvtColor(src, gray, ColorConversionCodes.BGR2GRAY);
             Cv2.GaussianBlur(gray, gray, new OpenCvSharp.Size(5, 5), 0);
+
+            Mat? debugMat = null;
+            if (generateDebug)
+            {
+                debugMat = src.Clone();
+            }
 
             int rows = _g.Rows;
             int cols = _g.Cols;
@@ -114,44 +131,50 @@ namespace ContrlAcademico.Services
                 {
                     int y = _g.StartY + r * _g.Dy;
 
-                    // 3) Para cada opción A–E calculamos la media dentro de la elipse
-                    var stats = Enumerable.Range(0, cols)
-                        .Select(c =>
+                    var stats = new List<(int option, double mean, Rect rect)>(cols);
+
+                    for (int c = 0; c < cols; c++)
+                    {
+                        int x = baseX + c * _g.Dx;
+
+                        int x2 = Math.Clamp(x, 0, gray.Width);
+                        int y2 = Math.Clamp(y, 0, gray.Height);
+                        int w2 = Math.Min(_g.BubbleW, gray.Width  - x2);
+                        int h2 = Math.Min(_g.BubbleH, gray.Height - y2);
+
+                        if (w2 <= 0 || h2 <= 0)
                         {
-                            int x = baseX + c * _g.Dx;
-                            // Clamp ROI
-                            int x2 = Math.Clamp(x, 0, gray.Width);
-                            int y2 = Math.Clamp(y, 0, gray.Height);
-                            int w2 = Math.Min(_g.BubbleW, gray.Width  - x2);
-                            int h2 = Math.Min(_g.BubbleH, gray.Height - y2);
+                            stats.Add((c, 255.0, new Rect(x2, y2, Math.Max(w2, 0), Math.Max(h2, 0))));
+                            continue;
+                        }
 
-                            if (w2 <= 0 || h2 <= 0)
-                                return (opt: c, mean: 255.0);
-
-                            // Extraemos ROI y recortamos la máscara al mismo tamaño
-                            using var roi = new Mat(gray, new Rect(x2, y2, w2, h2));
-                            using var maskROI = new Mat(_mask, new Rect(0, 0, w2, h2));
-                            // Media ponderada
-                            Scalar m = Cv2.Mean(roi, maskROI);
-                            return (opt: c, mean: m.Val0);
-                        })
-                        .OrderBy(t => t.mean) // las más oscuras (menor mean) primero
-                        .ToArray();
-
-                    // 4) Decidir: 
-                    //    - si la mejor media > meanThreshold => ninguna  
-                    //    - si la segunda es demasiado cercana => ambigua
-                    var best = stats[0];
-                    if (best.mean > _meanThreshold ||
-                        (cols > 1 && stats[1].mean - best.mean < _deltaMin))
-                    {
-                        answers[idx] = '-';
+                        using var roi = new Mat(gray, new Rect(x2, y2, w2, h2));
+                        using var maskROI = new Mat(_mask, new Rect(0, 0, w2, h2));
+                        Scalar m = Cv2.Mean(roi, maskROI);
+                        stats.Add((c, m.Val0, new Rect(x2, y2, w2, h2)));
                     }
-                    else
+
+                    var ordered = stats.OrderBy(t => t.mean).ToList();
+                    var best = ordered[0];
+                    double bestMean = best.mean;
+                    double secondMean = ordered.Count > 1 ? ordered[1].mean : double.MaxValue;
+
+                    bool hasValidAnswer = bestMean <= _meanThreshold &&
+                        (cols <= 1 || secondMean - bestMean >= _deltaMin);
+
+                    answers[idx] = hasValidAnswer ? (char)('A' + best.option) : '-';
+
+                    if (generateDebug && hasValidAnswer && debugMat is not null && best.rect.Width > 0 && best.rect.Height > 0)
                     {
-                        answers[idx] = (char)('A' + best.opt);
+                        Cv2.Rectangle(debugMat, best.rect, Scalar.LimeGreen, 2);
                     }
                 }
+            }
+
+            if (generateDebug && debugMat is not null)
+            {
+                debugImage = BitmapConverter.ToBitmap(debugMat);
+                debugMat.Dispose();
             }
 
             return answers;
