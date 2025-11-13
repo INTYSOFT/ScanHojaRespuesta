@@ -3,6 +3,8 @@ using Newtonsoft.Json;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -35,6 +37,11 @@ namespace ContrlAcademico
         private List<Bitmap> _threshPages;
         private List<char[]> _answersPages;
         private int _currentPage = 0;
+
+        private bool _depurarImagen = true;
+        private const string DepurarRootPath = @"D:\depurar";
+        private readonly string _depurarDniPath = Path.Combine(DepurarRootPath, "dni");
+        private readonly string _depurarRespuestasPath = Path.Combine(DepurarRootPath, "respuestas");
 
         private bool _calibrated = false;
         private readonly string _configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.json");
@@ -520,6 +527,37 @@ namespace ContrlAcademico
                 row.Cells["colPage"].Value = string.Empty;
                 row.Cells["colFecha"].Value = string.Empty;
                 row.Tag = null;
+            }
+        }
+
+        private void EnsureDepuracionDirectorios()
+        {
+            if (!_depurarImagen)
+            {
+                return;
+            }
+
+            Directory.CreateDirectory(DepurarRootPath);
+            Directory.CreateDirectory(_depurarDniPath);
+            Directory.CreateDirectory(_depurarRespuestasPath);
+        }
+
+        private void GuardarImagenDepuracion(Bitmap? imagen, string directorio, string nombreArchivo)
+        {
+            if (!_depurarImagen || imagen is null)
+            {
+                return;
+            }
+
+            try
+            {
+                Directory.CreateDirectory(directorio);
+                string ruta = Path.Combine(directorio, nombreArchivo);
+                imagen.Save(ruta, ImageFormat.Png);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"No se pudo guardar la imagen de depuración '{nombreArchivo}': {ex.Message}");
             }
         }
 
@@ -1158,6 +1196,7 @@ namespace ContrlAcademico
 
             try
             {
+                EnsureDepuracionDirectorios();
                 var corrector = new PerspectiveCorrector();
                 var renderer = new PdfRenderer(@"C:\Program Files\gs\gs10.05.1\bin\gsdll64.dll", _config.Dpi);
 
@@ -1180,7 +1219,9 @@ namespace ContrlAcademico
 
                 for (int i = 0; i < pages.Count; i++)
                 {
-                    string dni = ReadDniFromPage(pages[i]);
+                    string dni = ReadDniFromPage(pages[i], _depurarImagen, out var dniDebugImage);
+                    GuardarImagenDepuracion(dniDebugImage, _depurarDniPath, $"dni_{i + 1:000}.png");
+                    dniDebugImage?.Dispose();
 
                     Bitmap warped = corrector.Correct(pages[i], out _, out _);
 
@@ -1201,7 +1242,12 @@ namespace ContrlAcademico
                         CalibrateGrid(gray);
                     }
 
-                    var answers = _omrProcessor.Process(warped);
+                    Bitmap? respuestasDebug = null;
+                    var answers = _depurarImagen
+                        ? _omrProcessor.Process(warped, out respuestasDebug)
+                        : _omrProcessor.Process(warped);
+                    GuardarImagenDepuracion(respuestasDebug, _depurarRespuestasPath, $"respuestas_{i + 1:000}.png");
+                    respuestasDebug?.Dispose();
                     warped.Dispose();
 
                     _pageDnis.Add(dni);
@@ -1389,6 +1435,7 @@ namespace ContrlAcademico
             btnStart.Enabled = false;
             //logs.Clear();
 
+            EnsureDepuracionDirectorios();
             var pages = _renderer.RenderPages(txtPdfPath.Text);
             progressBar.Maximum = pages.Count;
 
@@ -1417,7 +1464,9 @@ namespace ContrlAcademico
                 pbThresh.Image = (Bitmap)roiBmp.Clone();
 
                 // 3) Extraemos el DNI
-                string dni = _dniExt.Extract(fullPage);
+                string dni = _dniExt.Extract(fullPage, _depurarImagen, out var dniDebugImage);
+                GuardarImagenDepuracion(dniDebugImage, _depurarDniPath, $"dni_dniOnly_{i + 1:000}.png");
+                dniDebugImage?.Dispose();
                 //logs.AppendText($"Página {i+1:000} → DNI: {dni}\r\n");
 
                 // 4) Avanzamos la barra y dejamos que Windows repinte
@@ -1432,24 +1481,11 @@ namespace ContrlAcademico
         }
 
 
-        private string ReadDniFromPage(Bitmap fullPage)
+        private string ReadDniFromPage(Bitmap fullPage, bool generateDebugImage, out Bitmap? dniDebugImage)
         {
-            // 1) Dibujar el rectángulo de la región del DNI sobre la página
-            int W = fullPage.Width, H = fullPage.Height;
-            var rn = _cfg.DniRegionNorm;
-            var roiRect = new Rect(
-                (int)(rn.X * W), (int)(rn.Y * H),
-                (int)(rn.W * W), (int)(rn.H * H)
-            );
-
-            // debugMat: página completa + rect
-            using var debugMat = BitmapConverter.ToMat(fullPage).Clone();
-            Cv2.Rectangle(debugMat, roiRect, Scalar.Red, 2);
-            _debugPages.Add(BitmapConverter.ToBitmap(debugMat));
-
-            // 2) Binarizar la página completa (como hacías antes)
+            using var pageMat = BitmapConverter.ToMat(fullPage);
             using var gray = new Mat();
-            Cv2.CvtColor(debugMat, gray, ColorConversionCodes.BGR2GRAY);
+            Cv2.CvtColor(pageMat, gray, ColorConversionCodes.BGR2GRAY);
             using var thresh = new Mat();
             Cv2.AdaptiveThreshold(
                 gray, thresh, 255,
@@ -1459,13 +1495,16 @@ namespace ContrlAcademico
             );
             _threshPages.Add(BitmapConverter.ToBitmap(thresh));
 
-            // 3) Procesar OMR de respuestas sobre la página completa
-            //    (si en realidad lo querías sobre el warped, pásale fullPage)
+            string dni = _dniExt.Extract(fullPage, generateDebugImage, out dniDebugImage);
+
+            Bitmap debugBitmap = dniDebugImage is not null
+                ? (Bitmap)dniDebugImage.Clone()
+                : BitmapConverter.ToBitmap(pageMat);
+            _debugPages.Add(debugBitmap);
+
             var answers = _omrProcessor.Process(fullPage);
             _answersPages.Add(answers);
 
-            // 4) Extraer el DNI con tu extractor (que aplica OMR 8×10 sobre la región)
-            string dni = _dniExt.Extract(fullPage);
             return dni;
         }
 
